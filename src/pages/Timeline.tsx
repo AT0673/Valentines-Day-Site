@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { useEffect, useState } from 'react';
 import { theme } from '../styles/theme';
 import { usePageContent } from '../hooks/usePageContent';
+import { useTimelineEvents } from '../hooks/useTimelineEvents';
 
 const TimelineContainer = styled.div`
   min-height: 100vh;
@@ -141,7 +142,7 @@ const EventDescription = styled.p`
   line-height: ${theme.typography.lineHeights.loose};
 `;
 
-const timelineEvents = [
+const fallbackTimelineEvents = [
   {
     date: 'December 4, 2025',
     title: 'The Day We Met',
@@ -166,19 +167,35 @@ const timelineEvents = [
 
 export default function Timeline() {
   const { content: pageContent } = usePageContent('timeline');
-  const [events, setEvents] = useState(timelineEvents);
+  const { events: firebaseEvents, loading } = useTimelineEvents();
   const [title, setTitle] = useState('Our Journey Together');
   const [subtitle, setSubtitle] = useState('Every moment is a milestone');
+
+  // Use Firebase events if available, otherwise use fallback
+  const displayEvents = firebaseEvents.length > 0 ? firebaseEvents : fallbackTimelineEvents;
 
   useEffect(() => {
     if (pageContent) {
       if (pageContent.title) setTitle(pageContent.title);
       if (pageContent.subtitle) setSubtitle(pageContent.subtitle);
-      if (pageContent.events && Array.isArray(pageContent.events)) {
-        setEvents(pageContent.events);
-      }
     }
   }, [pageContent]);
+
+  if (loading) {
+    return (
+      <TimelineContainer>
+        <Header>
+          <Title
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            Loading...
+          </Title>
+        </Header>
+      </TimelineContainer>
+    );
+  }
 
   return (
     <TimelineContainer>
@@ -200,7 +217,7 @@ export default function Timeline() {
       </Header>
 
       <TimelinePath>
-        {events.map((event, index) => {
+        {displayEvents.map((event, index) => {
           const alignment = index % 2 === 0 ? 'left' : 'right';
 
           return (

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../../styles/theme';
+import { useReasons } from '../../hooks/useReasons';
 
 const ReasonsSection = styled.section`
   padding: ${theme.spacing['4xl']} 0;
@@ -72,7 +73,13 @@ const ReasonNumber = styled.div`
   font-size: 14px;
 `;
 
-// Placeholder data - will be replaced with Firebase data
+const LoadingText = styled.p`
+  text-align: center;
+  color: ${theme.colors.text.secondary};
+  font-family: ${theme.typography.fonts.body};
+`;
+
+// Fallback placeholder data
 const placeholderReasons = [
   "Your smile lights up my entire world and makes everything better",
   "The way you laugh at my silly jokes, even the terrible ones",
@@ -87,36 +94,45 @@ const placeholderReasons = [
 ];
 
 export default function ReasonsGrid() {
+  const { reasons, loading } = useReasons();
+
+  // Use Firebase reasons if available, otherwise use placeholders
+  const displayReasons = reasons.length > 0 ? reasons.map(r => r.text) : placeholderReasons;
+
   return (
     <ReasonsSection>
       <div className="container">
         <SectionTitle>Reasons I Adore You</SectionTitle>
 
-        <ReasonsContainer>
-          {placeholderReasons.map((reason, index) => (
-            <ReasonCard
-              key={index}
-              $depth={index % 3}
-              initial={{ opacity: 0, y: 50, rotateX: -10 }}
-              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-              viewport={{ once: true, margin: '-100px' }}
-              transition={{
-                delay: index * 0.1,
-                duration: 0.6,
-                ease: 'easeOut',
-              }}
-              whileHover={{
-                y: -8,
-                scale: 1.03,
-                boxShadow: '0 12px 48px rgba(255, 107, 157, 0.25)',
-                transition: { duration: 0.3 },
-              }}
-            >
-              <ReasonNumber>{index + 1}</ReasonNumber>
-              <ReasonText>{reason}</ReasonText>
-            </ReasonCard>
-          ))}
-        </ReasonsContainer>
+        {loading ? (
+          <LoadingText>Loading...</LoadingText>
+        ) : (
+          <ReasonsContainer>
+            {displayReasons.map((reason, index) => (
+              <ReasonCard
+                key={index}
+                $depth={index % 3}
+                initial={{ opacity: 0, y: 50, rotateX: -10 }}
+                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                viewport={{ once: true, margin: '-100px' }}
+                transition={{
+                  delay: index * 0.1,
+                  duration: 0.6,
+                  ease: 'easeOut',
+                }}
+                whileHover={{
+                  y: -8,
+                  scale: 1.03,
+                  boxShadow: '0 12px 48px rgba(255, 107, 157, 0.25)',
+                  transition: { duration: 0.3 },
+                }}
+              >
+                <ReasonNumber>{index + 1}</ReasonNumber>
+                <ReasonText>{reason}</ReasonText>
+              </ReasonCard>
+            ))}
+          </ReasonsContainer>
+        )}
       </div>
     </ReasonsSection>
   );

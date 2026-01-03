@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuizQuestions } from '../hooks/useQuizQuestions';
 
 const QuizContainer = styled.div`
   min-height: 100vh;
@@ -155,7 +156,7 @@ const RestartButton = styled(motion.button)`
   }
 `;
 
-const quizQuestions = [
+const fallbackQuestions = [
   {
     question: "What's your ideal date night with me?",
     options: [
@@ -163,7 +164,8 @@ const quizQuestions = [
       "Romantic dinner at a fancy restaurant",
       "Adventure outdoors - hiking or exploring",
       "Fun activity like bowling or arcade games"
-    ]
+    ],
+    correctAnswer: 0
   },
   {
     question: "How do you prefer to show affection?",
@@ -172,7 +174,8 @@ const quizQuestions = [
       "Physical touch and cuddles",
       "Acts of service and helpful gestures",
       "Thoughtful gifts and surprises"
-    ]
+    ],
+    correctAnswer: 0
   },
   {
     question: "What's our future home like?",
@@ -181,7 +184,8 @@ const quizQuestions = [
       "Cozy cottage in the countryside",
       "Beach house by the ocean",
       "Anywhere, as long as we're together"
-    ]
+    ],
+    correctAnswer: 3
   },
   {
     question: "Pick a vacation destination for us:",
@@ -190,7 +194,8 @@ const quizQuestions = [
       "Tokyo, Japan - culture and adventure",
       "Maldives - tropical paradise",
       "New York - the city that never sleeps"
-    ]
+    ],
+    correctAnswer: 0
   },
   {
     question: "What's your favorite thing about us?",
@@ -199,14 +204,26 @@ const quizQuestions = [
       "Our deep conversations",
       "Our shared dreams and goals",
       "How comfortable we are together"
-    ]
+    ],
+    correctAnswer: 0
   }
 ];
 
 export default function Quiz() {
+  const { questions: firebaseQuestions, loading } = useQuizQuestions();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [answers, setAnswers] = useState<number[]>([]);
+
+  // Use Firebase questions if available, otherwise use fallback
+  const quizQuestions = firebaseQuestions.length > 0 ? firebaseQuestions : fallbackQuestions;
+
+  // Reset quiz when questions change
+  useEffect(() => {
+    setCurrentQuestion(0);
+    setShowResult(false);
+    setAnswers([]);
+  }, [firebaseQuestions]);
 
   const handleAnswer = (optionIndex: number) => {
     const newAnswers = [...answers, optionIndex];
@@ -230,6 +247,20 @@ export default function Quiz() {
   };
 
   const progress = ((currentQuestion + 1) / quizQuestions.length) * 100;
+
+  if (loading) {
+    return (
+      <QuizContainer>
+        <QuizCard
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <p style={{ textAlign: 'center', padding: '2rem' }}>Loading quiz...</p>
+        </QuizCard>
+      </QuizContainer>
+    );
+  }
 
   return (
     <QuizContainer>

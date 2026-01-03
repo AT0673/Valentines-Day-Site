@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../../styles/theme';
+import { usePhotos } from '../../hooks/usePhotos';
 
 const GallerySection = styled.section`
   padding: ${theme.spacing['3xl']} 0;
@@ -64,7 +65,13 @@ const PhotoCaption = styled.div`
   font-family: ${theme.typography.fonts.body};
 `;
 
-// Placeholder data - will be replaced with Firebase data
+const LoadingText = styled.p`
+  text-align: center;
+  color: ${theme.colors.text.secondary};
+  font-family: ${theme.typography.fonts.body};
+`;
+
+// Fallback placeholder photos if Firebase is empty
 const placeholderPhotos = [
   { id: '1', url: 'https://via.placeholder.com/400x300/FFD6E8/FF6B9D?text=Photo+1', caption: 'A beautiful memory together' },
   { id: '2', url: 'https://via.placeholder.com/400x500/E8D6FF/C8B6E2?text=Photo+2', caption: 'Special moment' },
@@ -75,6 +82,11 @@ const placeholderPhotos = [
 ];
 
 export default function PhotoGallery() {
+  const { photos, loading } = usePhotos();
+
+  // Use Firebase photos if available, otherwise use placeholders
+  const displayPhotos = photos.length > 0 ? photos : placeholderPhotos;
+
   return (
     <GallerySection>
       <div className="container">
@@ -84,20 +96,24 @@ export default function PhotoGallery() {
           remind me of all the reasons I love you.
         </Description>
 
-        <MasonryGrid>
-          {placeholderPhotos.map((photo, index) => (
-            <PhotoCard
-              key={photo.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <PhotoImage src={photo.url} alt={photo.caption} loading="lazy" />
-              <PhotoCaption>{photo.caption}</PhotoCaption>
-            </PhotoCard>
-          ))}
-        </MasonryGrid>
+        {loading ? (
+          <LoadingText>Loading photos...</LoadingText>
+        ) : (
+          <MasonryGrid>
+            {displayPhotos.map((photo, index) => (
+              <PhotoCard
+                key={photo.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <PhotoImage src={photo.url} alt={photo.caption || 'Photo'} loading="lazy" />
+                {photo.caption && <PhotoCaption>{photo.caption}</PhotoCaption>}
+              </PhotoCard>
+            ))}
+          </MasonryGrid>
+        )}
       </div>
     </GallerySection>
   );

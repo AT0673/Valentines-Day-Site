@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
 import { useState } from 'react';
+import { useDreams } from '../hooks/useDreams';
 
 const DreamsContainer = styled.div`
   min-height: 100vh;
@@ -111,7 +112,7 @@ const FloatingParticle = styled(motion.div)`
   pointer-events: none;
 `;
 
-const dreams = [
+const fallbackDreams = [
   {
     icon: '🏖️',
     title: 'Visit Cornwall',
@@ -145,7 +146,11 @@ const dreams = [
 ];
 
 export default function Dreams() {
+  const { dreams: firebaseDreams, loading } = useDreams();
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([]);
+
+  // Use Firebase dreams if available, otherwise use fallback
+  const displayDreams = firebaseDreams.length > 0 ? firebaseDreams : fallbackDreams;
 
   const handleHover = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -159,6 +164,22 @@ export default function Dreams() {
       setParticles(prev => prev.filter(p => p.id !== newParticle.id));
     }, 1000);
   };
+
+  if (loading) {
+    return (
+      <DreamsContainer>
+        <Header>
+          <Title
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            Loading...
+          </Title>
+        </Header>
+      </DreamsContainer>
+    );
+  }
 
   return (
     <DreamsContainer>
@@ -180,7 +201,7 @@ export default function Dreams() {
       </Header>
 
       <DreamsGrid>
-        {dreams.map((dream, index) => (
+        {displayDreams.map((dream, index) => (
           <DreamBubble
             key={index}
             initial={{ opacity: 0, scale: 0.8 }}
