@@ -188,10 +188,35 @@ npm run lint         # Run ESLint
 
 ### Deploy to Vercel (Recommended)
 
-1. Push your code to GitHub
-2. Import project to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy!
+1. **Push your code to GitHub**
+   ```bash
+   git add .
+   git commit -m "Prepare for Vercel deployment"
+   git push origin main
+   ```
+
+2. **Import project to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - Vercel will auto-detect the Vite configuration
+
+3. **Configure Environment Variables**
+   - In Vercel Dashboard, go to: Project Settings > Environment Variables
+   - Add each Firebase environment variable:
+     - `VITE_FIREBASE_API_KEY`
+     - `VITE_FIREBASE_AUTH_DOMAIN`
+     - `VITE_FIREBASE_PROJECT_ID`
+     - `VITE_FIREBASE_STORAGE_BUCKET`
+     - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+     - `VITE_FIREBASE_APP_ID`
+   - Make sure to check "Production", "Preview", and "Development" for each variable
+
+4. **Deploy**
+   - Click "Deploy"
+   - Your site will be live at `https://your-project.vercel.app`
+
+**Note**: The `vercel.json` file is already configured for proper SPA routing.
 
 ### Deploy to Netlify
 

@@ -437,7 +437,7 @@ export default function Admin() {
   const [loggingIn, setLoggingIn] = useState(false);
   
   // Event management state
-  const { events, loading: eventsLoading, addEvent, updateEvent, deleteEvent } = useEvents();
+  const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents();
   const [showEventForm, setShowEventForm] = useState(false);
   const [formData, setFormData] = useState<CountdownEvent>({
     name: '',
@@ -447,7 +447,6 @@ export default function Admin() {
   const [savingEvent, setSavingEvent] = useState(false);
 
   // Page editing state
-  const [activeTab, setActiveTab] = useState<string>('events');
   const [selectedPage, setSelectedPage] = useState<string>('letter');
   const pages = [
     { id: 'letter', name: 'Love Letter' },
@@ -682,66 +681,67 @@ export default function Admin() {
 
           <AnimatePresence>
             {showEventForm && (
-              <InfoCard
-                as={motion.div}
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                <form onSubmit={handleAddEvent}>
-                  <FormGroup>
-                    <FormLabel>Event Name *</FormLabel>
-                    <FormInput
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g., Our Anniversary"
-                      required
-                    />
-                  </FormGroup>
+                <InfoCard>
+                  <form onSubmit={handleAddEvent}>
+                    <FormGroup>
+                      <FormLabel>Event Name *</FormLabel>
+                      <FormInput
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g., Our Anniversary"
+                        required
+                      />
+                    </FormGroup>
 
-                  <FormGroup>
-                    <FormLabel>Date *</FormLabel>
-                    <FormInput
-                      type="datetime-local"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required
-                    />
-                  </FormGroup>
+                    <FormGroup>
+                      <FormLabel>Date *</FormLabel>
+                      <FormInput
+                        type="datetime-local"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
+                      />
+                    </FormGroup>
 
-                  <FormGroup>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormTextarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Add a description for this event..."
-                    />
-                  </FormGroup>
+                    <FormGroup>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormTextarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Add a description for this event..."
+                      />
+                    </FormGroup>
 
-                  <ButtonGroup>
-                    <SubmitButton
-                      type="submit"
-                      disabled={savingEvent}
-                      whileHover={{ scale: savingEvent ? 1 : 1.02 }}
-                      whileTap={{ scale: savingEvent ? 1 : 0.98 }}
-                    >
-                      {savingEvent ? 'Saving...' : 'Save Event'}
-                    </SubmitButton>
-                    <CancelButton
-                      type="button"
-                      onClick={() => {
-                        setShowEventForm(false);
-                        setFormData({ name: '', date: '', description: '' });
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Cancel
-                    </CancelButton>
-                  </ButtonGroup>
-                </form>
-              </InfoCard>
+                    <ButtonGroup>
+                      <SubmitButton
+                        type="submit"
+                        disabled={savingEvent}
+                        whileHover={{ scale: savingEvent ? 1 : 1.02 }}
+                        whileTap={{ scale: savingEvent ? 1 : 0.98 }}
+                      >
+                        {savingEvent ? 'Saving...' : 'Save Event'}
+                      </SubmitButton>
+                      <CancelButton
+                        type="button"
+                        onClick={() => {
+                          setShowEventForm(false);
+                          setFormData({ name: '', date: '', description: '' });
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Cancel
+                      </CancelButton>
+                    </ButtonGroup>
+                  </form>
+                </InfoCard>
+              </motion.div>
             )}
           </AnimatePresence>
 
