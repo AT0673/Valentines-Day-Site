@@ -311,12 +311,7 @@ export default function Countdown() {
               transition={{ delay: index * 0.1, duration: 0.5 }}
               whileHover={{ y: -8, scale: 1.05 }}
             >
-              <CountdownValue
-                key={item.value}
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
+              <CountdownValue>
                 {item.value}
               </CountdownValue>
               <CountdownLabel>{item.label}</CountdownLabel>
