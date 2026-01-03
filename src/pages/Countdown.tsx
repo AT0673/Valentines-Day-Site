@@ -64,6 +64,8 @@ const CountdownBox = styled(motion.div)`
   box-shadow: ${theme.shadows.soft};
   position: relative;
   overflow: hidden;
+  transition: transform 0.3s ease;
+  will-change: transform;
 
   &::before {
     content: '';
@@ -74,9 +76,13 @@ const CountdownBox = styled(motion.div)`
     height: 4px;
     background: linear-gradient(90deg, #FF6B9D 0%, #C8B6E2 100%);
   }
+
+  &:hover {
+    transform: translateY(-8px) scale(1.05);
+  }
 `;
 
-const CountdownValue = styled(motion.div)`
+const CountdownValue = styled.div`
   font-family: ${theme.typography.fonts.display};
   font-size: 72px;
   font-weight: ${theme.typography.weights.semibold};
@@ -159,10 +165,11 @@ const EventItem = styled(motion.div)`
   width: 100%;
   cursor: pointer;
   transition: all 0.3s ease;
+  will-change: transform, background;
 
   &:hover {
     background: ${theme.colors.glass.medium};
-    transform: translateX(4px);
+    transform: translateX(4px) scale(1.02);
   }
 `;
 
@@ -309,7 +316,6 @@ export default function Countdown() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ y: -8, scale: 1.05 }}
             >
               <CountdownValue>
                 {item.value}
@@ -346,7 +352,6 @@ export default function Countdown() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.02 }}
                 >
                   <EventItemName>{event.name}</EventItemName>
                   <EventItemDate>
