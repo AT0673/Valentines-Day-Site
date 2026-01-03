@@ -863,6 +863,8 @@ export default function Admin() {
         </Section>
 
         <Section>
+          <SectionTitle>Quick Setup Guide</SectionTitle>
+          <InfoCard>
             <InfoText>
               <strong>1. Firebase Configuration:</strong> Make sure you've created a <Code>.env</Code> file
               based on <Code>.env.example</Code> and filled in your Firebase credentials.
