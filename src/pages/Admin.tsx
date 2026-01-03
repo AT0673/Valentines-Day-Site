@@ -270,12 +270,31 @@ const SubmitButton = styled(motion.button)`
   font-weight: ${theme.typography.weights.medium};
   cursor: pointer;
   box-shadow: ${theme.shadows.soft};
-  width: 100%;
+  flex: 1;
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: ${theme.spacing.sm};
+  margin-top: ${theme.spacing.sm};
+`;
+
+const CancelButton = styled(motion.button)`
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: rgba(128, 128, 128, 0.2);
+  border: 2px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.lg};
+  color: ${theme.colors.text.primary};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  font-weight: ${theme.typography.weights.medium};
+  cursor: pointer;
+  flex: 1;
 `;
 
 const DeleteButton = styled(motion.button)`
@@ -286,7 +305,7 @@ const DeleteButton = styled(motion.button)`
   border-radius: ${theme.borderRadius.md};
   cursor: pointer;
   font-weight: bold;
-  margin-top: ${theme.spacing.sm};
+  flex: 1;
 
   &:hover {
     background: rgba(255, 59, 48, 0.3);
@@ -345,10 +364,10 @@ export default function Admin() {
 
   // Hooks for all content types
   const { events, addEvent, deleteEvent } = useEvents();
-  const { events: timelineEvents, addEvent: addTimelineEvent, deleteEvent: deleteTimelineEvent } = useTimelineEvents();
-  const { questions, addQuestion, deleteQuestion } = useQuizQuestions();
-  const { dreams, addDream, deleteDream } = useDreams();
-  const { reasons, addReason, deleteReason } = useReasons();
+  const { events: timelineEvents, addEvent: addTimelineEvent, updateEvent: updateTimelineEvent, deleteEvent: deleteTimelineEvent } = useTimelineEvents();
+  const { questions, addQuestion, updateQuestion, deleteQuestion } = useQuizQuestions();
+  const { dreams, addDream, updateDream, deleteDream } = useDreams();
+  const { reasons, addReason, updateReason, deleteReason } = useReasons();
   const { photos, uploading, uploadPhoto, deletePhoto } = usePhotos();
 
   // Page content
@@ -362,6 +381,12 @@ export default function Admin() {
   const [quizForm, setQuizForm] = useState<QuizQuestion>({ question: '', options: ['', '', '', ''], correctAnswer: 0 });
   const [dreamForm, setDreamForm] = useState<Dream>({ title: '', description: '', icon: '✨' });
   const [reasonForm, setReasonForm] = useState<Reason>({ text: '' });
+
+  // Edit states
+  const [editingTimelineId, setEditingTimelineId] = useState<string | null>(null);
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
+  const [editingDreamId, setEditingDreamId] = useState<string | null>(null);
+  const [editingReasonId, setEditingReasonId] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -514,6 +539,71 @@ export default function Admin() {
       alert('Reason added!');
     } catch (err) {
       alert('Failed to add reason');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Update handlers
+  const handleUpdateTimelineEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTimelineId) return;
+    setSaving(true);
+    try {
+      await updateTimelineEvent(editingTimelineId, timelineForm);
+      setEditingTimelineId(null);
+      setTimelineForm({ date: '', title: '', description: '', emoji: '💕' });
+      alert('Timeline event updated!');
+    } catch (err) {
+      alert('Failed to update timeline event');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateQuizQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingQuizId) return;
+    setSaving(true);
+    try {
+      await updateQuestion(editingQuizId, quizForm);
+      setEditingQuizId(null);
+      setQuizForm({ question: '', options: ['', '', '', ''], correctAnswer: 0 });
+      alert('Quiz question updated!');
+    } catch (err) {
+      alert('Failed to update quiz question');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateDream = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDreamId) return;
+    setSaving(true);
+    try {
+      await updateDream(editingDreamId, dreamForm);
+      setEditingDreamId(null);
+      setDreamForm({ title: '', description: '', icon: '✨' });
+      alert('Dream updated!');
+    } catch (err) {
+      alert('Failed to update dream');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateReason = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReasonId) return;
+    setSaving(true);
+    try {
+      await updateReason(editingReasonId, reasonForm);
+      setEditingReasonId(null);
+      setReasonForm({ text: '' });
+      alert('Reason updated!');
+    } catch (err) {
+      alert('Failed to update reason');
     } finally {
       setSaving(false);
     }
@@ -696,9 +786,9 @@ export default function Admin() {
         {/* TIMELINE EVENTS */}
         {activeTab === 'timeline' && (
           <Section>
-            <SectionTitle>Manage Timeline Events</SectionTitle>
+            <SectionTitle>{editingTimelineId ? 'Edit' : 'Add'} Timeline Event</SectionTitle>
             <InfoCard>
-              <form onSubmit={handleAddTimelineEvent}>
+              <form onSubmit={editingTimelineId ? handleUpdateTimelineEvent : handleAddTimelineEvent}>
                 <FormGroup>
                   <FormLabel>Date *</FormLabel>
                   <FormInput type="date" value={timelineForm.date} onChange={(e) => setTimelineForm({ ...timelineForm, date: e.target.value })} required />
@@ -715,9 +805,16 @@ export default function Admin() {
                   <FormLabel>Emoji</FormLabel>
                   <FormInput value={timelineForm.emoji} onChange={(e) => setTimelineForm({ ...timelineForm, emoji: e.target.value })} />
                 </FormGroup>
-                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  {saving ? 'Saving...' : 'Add Timeline Event'}
-                </SubmitButton>
+                <ButtonGroup>
+                  <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    {saving ? 'Saving...' : (editingTimelineId ? 'Update' : 'Add')}
+                  </SubmitButton>
+                  {editingTimelineId && (
+                    <CancelButton type="button" onClick={() => { setEditingTimelineId(null); setTimelineForm({ date: '', title: '', description: '', emoji: '💕' }); }} whileHover={{ scale: 1.02 }}>
+                      Cancel
+                    </CancelButton>
+                  )}
+                </ButtonGroup>
               </form>
             </InfoCard>
             <Grid>
@@ -726,7 +823,10 @@ export default function Admin() {
                   <h4>{event.emoji} {event.title}</h4>
                   <p>{event.date}</p>
                   <p>{event.description}</p>
-                  <DeleteButton onClick={() => deleteTimelineEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  <ButtonGroup>
+                    <SubmitButton onClick={() => { setEditingTimelineId(event.id!); setTimelineForm(event); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton onClick={() => deleteTimelineEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  </ButtonGroup>
                 </Card>
               ))}
             </Grid>
@@ -736,9 +836,9 @@ export default function Admin() {
         {/* QUIZ QUESTIONS */}
         {activeTab === 'quiz' && (
           <Section>
-            <SectionTitle>Manage Quiz Questions</SectionTitle>
+            <SectionTitle>{editingQuizId ? 'Edit' : 'Add'} Quiz Question</SectionTitle>
             <InfoCard>
-              <form onSubmit={handleAddQuizQuestion}>
+              <form onSubmit={editingQuizId ? handleUpdateQuizQuestion : handleAddQuizQuestion}>
                 <FormGroup>
                   <FormLabel>Question *</FormLabel>
                   <FormInput value={quizForm.question} onChange={(e) => setQuizForm({ ...quizForm, question: e.target.value })} required />
@@ -761,9 +861,16 @@ export default function Admin() {
                   <FormLabel>Correct Answer (0-3)</FormLabel>
                   <FormInput type="number" min="0" max="3" value={quizForm.correctAnswer} onChange={(e) => setQuizForm({ ...quizForm, correctAnswer: parseInt(e.target.value) })} required />
                 </FormGroup>
-                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  {saving ? 'Saving...' : 'Add Quiz Question'}
-                </SubmitButton>
+                <ButtonGroup>
+                  <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    {saving ? 'Saving...' : (editingQuizId ? 'Update' : 'Add')}
+                  </SubmitButton>
+                  {editingQuizId && (
+                    <CancelButton type="button" onClick={() => { setEditingQuizId(null); setQuizForm({ question: '', options: ['', '', '', ''], correctAnswer: 0 }); }} whileHover={{ scale: 1.02 }}>
+                      Cancel
+                    </CancelButton>
+                  )}
+                </ButtonGroup>
               </form>
             </InfoCard>
             <Grid>
@@ -775,7 +882,10 @@ export default function Admin() {
                       {idx + 1}. {opt} {idx === q.correctAnswer && '✓'}
                     </p>
                   ))}
-                  <DeleteButton onClick={() => deleteQuestion(q.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  <ButtonGroup>
+                    <SubmitButton onClick={() => { setEditingQuizId(q.id!); setQuizForm(q); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton onClick={() => deleteQuestion(q.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  </ButtonGroup>
                 </Card>
               ))}
             </Grid>
@@ -785,9 +895,9 @@ export default function Admin() {
         {/* DREAMS */}
         {activeTab === 'dreams' && (
           <Section>
-            <SectionTitle>Manage Dreams</SectionTitle>
+            <SectionTitle>{editingDreamId ? 'Edit' : 'Add'} Dream</SectionTitle>
             <InfoCard>
-              <form onSubmit={handleAddDream}>
+              <form onSubmit={editingDreamId ? handleUpdateDream : handleAddDream}>
                 <FormGroup>
                   <FormLabel>Title *</FormLabel>
                   <FormInput value={dreamForm.title} onChange={(e) => setDreamForm({ ...dreamForm, title: e.target.value })} required />
@@ -800,9 +910,16 @@ export default function Admin() {
                   <FormLabel>Icon (emoji)</FormLabel>
                   <FormInput value={dreamForm.icon} onChange={(e) => setDreamForm({ ...dreamForm, icon: e.target.value })} />
                 </FormGroup>
-                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  {saving ? 'Saving...' : 'Add Dream'}
-                </SubmitButton>
+                <ButtonGroup>
+                  <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    {saving ? 'Saving...' : (editingDreamId ? 'Update' : 'Add')}
+                  </SubmitButton>
+                  {editingDreamId && (
+                    <CancelButton type="button" onClick={() => { setEditingDreamId(null); setDreamForm({ title: '', description: '', icon: '✨' }); }} whileHover={{ scale: 1.02 }}>
+                      Cancel
+                    </CancelButton>
+                  )}
+                </ButtonGroup>
               </form>
             </InfoCard>
             <Grid>
@@ -810,7 +927,10 @@ export default function Admin() {
                 <Card key={dream.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h4>{dream.icon} {dream.title}</h4>
                   <p>{dream.description}</p>
-                  <DeleteButton onClick={() => deleteDream(dream.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  <ButtonGroup>
+                    <SubmitButton onClick={() => { setEditingDreamId(dream.id!); setDreamForm(dream); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton onClick={() => deleteDream(dream.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  </ButtonGroup>
                 </Card>
               ))}
             </Grid>
@@ -820,23 +940,33 @@ export default function Admin() {
         {/* REASONS */}
         {activeTab === 'reasons' && (
           <Section>
-            <SectionTitle>Manage Reasons I Love You</SectionTitle>
+            <SectionTitle>{editingReasonId ? 'Edit' : 'Add'} Reason I Love You</SectionTitle>
             <InfoCard>
-              <form onSubmit={handleAddReason}>
+              <form onSubmit={editingReasonId ? handleUpdateReason : handleAddReason}>
                 <FormGroup>
                   <FormLabel>Reason *</FormLabel>
                   <FormInput value={reasonForm.text} onChange={(e) => setReasonForm({ text: e.target.value })} required />
                 </FormGroup>
-                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  {saving ? 'Saving...' : 'Add Reason'}
-                </SubmitButton>
+                <ButtonGroup>
+                  <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    {saving ? 'Saving...' : (editingReasonId ? 'Update' : 'Add')}
+                  </SubmitButton>
+                  {editingReasonId && (
+                    <CancelButton type="button" onClick={() => { setEditingReasonId(null); setReasonForm({ text: '' }); }} whileHover={{ scale: 1.02 }}>
+                      Cancel
+                    </CancelButton>
+                  )}
+                </ButtonGroup>
               </form>
             </InfoCard>
             <Grid>
               {reasons.map((reason) => (
                 <Card key={reason.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <p>{reason.text}</p>
-                  <DeleteButton onClick={() => deleteReason(reason.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  <ButtonGroup>
+                    <SubmitButton onClick={() => { setEditingReasonId(reason.id!); setReasonForm(reason); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton onClick={() => deleteReason(reason.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  </ButtonGroup>
                 </Card>
               ))}
             </Grid>
