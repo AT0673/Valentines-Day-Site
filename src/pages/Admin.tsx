@@ -12,6 +12,7 @@ import { useDreams, type Dream } from '../hooks/useDreams';
 import { useReasons, type Reason } from '../hooks/useReasons';
 import { usePhotos } from '../hooks/usePhotos';
 import type { User } from 'firebase/auth';
+import { seedTimelineEvents, seedQuizQuestions, seedDreams, seedReasons } from '../utils/seedData';
 
 const AdminContainer = styled.div`
   min-height: 100vh;
@@ -414,6 +415,39 @@ export default function Admin() {
     }
   };
 
+  const handleSeedDatabase = async () => {
+    if (!confirm('This will populate the database with initial content. Are you sure?')) return;
+
+    setSaving(true);
+    try {
+      // Seed timeline events
+      for (const event of seedTimelineEvents) {
+        await addTimelineEvent(event);
+      }
+
+      // Seed quiz questions
+      for (const question of seedQuizQuestions) {
+        await addQuestion(question);
+      }
+
+      // Seed dreams
+      for (const dream of seedDreams) {
+        await addDream(dream);
+      }
+
+      // Seed reasons
+      for (const reason of seedReasons) {
+        await addReason(reason);
+      }
+
+      alert('Database seeded successfully! All content is now editable.');
+    } catch (err) {
+      alert('Failed to seed database: ' + (err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Event handlers
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -585,9 +619,20 @@ export default function Admin() {
       <DashboardContainer>
         <Header>
           <WelcomeText>Admin Dashboard</WelcomeText>
-          <LogoutButton onClick={handleLogout} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            Sign Out
-          </LogoutButton>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <LogoutButton
+              onClick={handleSeedDatabase}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={saving}
+              style={{ background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)' }}
+            >
+              {saving ? 'Seeding...' : 'Seed Database'}
+            </LogoutButton>
+            <LogoutButton onClick={handleLogout} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              Sign Out
+            </LogoutButton>
+          </div>
         </Header>
 
         <MainTabContainer>
