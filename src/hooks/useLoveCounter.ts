@@ -22,13 +22,6 @@ export function useLoveCounter(startDate: Date): LoveCounterData {
   useEffect(() => {
     const calculateTime = () => {
       const now = new Date();
-      const diff = now.getTime() - startDate.getTime();
-
-      // Calculate time units
-      const seconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
 
       // Calculate years and months more accurately
       let years = now.getFullYear() - startDate.getFullYear();

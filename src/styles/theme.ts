@@ -101,6 +101,7 @@ export const theme = {
     sm: '8px',
     md: '16px',
     lg: '24px',
+    xl: '32px',
     full: '9999px',
   },
 
@@ -109,6 +110,7 @@ export const theme = {
     medium: '0 8px 32px rgba(255, 182, 193, 0.2)',
     strong: '0 12px 48px rgba(255, 182, 193, 0.25)',
     glass: '0 8px 32px rgba(31, 38, 135, 0.15)',
+    glow: '0 0 20px rgba(255, 107, 157, 0.5)',
   },
 
   breakpoints: {

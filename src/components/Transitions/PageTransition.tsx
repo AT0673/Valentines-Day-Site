@@ -1,12 +1,14 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import styled from '@emotion/styled';
-import { ReactNode, useState, useEffect } from 'react';
-import { theme } from '../../styles/theme';
+import type { ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 
 interface PageTransitionProps {
   children: ReactNode;
   location: string;
 }
+
+type CustomVariants = Record<string, any>;
 
 const TransitionWrapper = styled.div`
   position: relative;
@@ -49,7 +51,7 @@ interface ParticleData {
   emoji?: string;
 }
 
-const pageVariants = {
+const pageVariants: Variants = {
   initial: {
     opacity: 0,
     y: 20,
@@ -72,7 +74,7 @@ const pageVariants = {
   },
 };
 
-const particleVariants = {
+const particleVariants: CustomVariants = {
   initial: {
     scale: 0,
     opacity: 0,
@@ -90,7 +92,7 @@ const particleVariants = {
   }),
 };
 
-const heartVariants = {
+const heartVariants: CustomVariants = {
   initial: {
     scale: 0,
     opacity: 0,

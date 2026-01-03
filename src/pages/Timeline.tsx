@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
-import { useState } from 'react';
 
 const TimelineContainer = styled.div`
   min-height: 100vh;
@@ -164,7 +163,6 @@ const timelineEvents = [
 ];
 
 export default function Timeline() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
     <TimelineContainer>
@@ -199,8 +197,6 @@ export default function Timeline() {
                 viewport={{ once: true, margin: '-100px' }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 whileHover={{ y: -8, scale: 1.02 }}
-                onHoverStart={() => setHoveredIndex(index)}
-                onHoverEnd={() => setHoveredIndex(null)}
               >
                 <LilyDecoration alignment={alignment}>
                   <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
