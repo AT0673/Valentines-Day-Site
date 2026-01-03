@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
@@ -6,6 +6,11 @@ import { auth, isFirebaseConfigured } from '../config/firebase';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { useEvents, type CountdownEvent } from '../hooks/useEvents';
 import { usePageContent, type PageContent } from '../hooks/usePageContent';
+import { useTimelineEvents, type TimelineEvent } from '../hooks/useTimelineEvents';
+import { useQuizQuestions, type QuizQuestion } from '../hooks/useQuizQuestions';
+import { useDreams, type Dream } from '../hooks/useDreams';
+import { useReasons, type Reason } from '../hooks/useReasons';
+import { usePhotos } from '../hooks/usePhotos';
 import type { User } from 'firebase/auth';
 
 const AdminContainer = styled.div`
@@ -139,6 +144,32 @@ const LogoutButton = styled(motion.button)`
   }
 `;
 
+const MainTabContainer = styled.div`
+  display: flex;
+  gap: ${theme.spacing.md};
+  margin-bottom: ${theme.spacing['3xl']};
+  flex-wrap: wrap;
+  border-bottom: 2px solid ${theme.colors.glass.border};
+  padding-bottom: ${theme.spacing.lg};
+`;
+
+const MainTab = styled(motion.button)<{ active: boolean }>`
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: ${props => props.active ? 'linear-gradient(135deg, ' + theme.colors.primary + ' 0%, ' + theme.colors.secondary + ' 100%)' : theme.colors.glass.light};
+  border: ${props => props.active ? 'none' : '2px solid ' + theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.md};
+  color: ${props => props.active ? 'white' : theme.colors.text.primary};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  font-weight: ${theme.typography.weights.medium};
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
 const Section = styled.div`
   margin-bottom: ${theme.spacing['3xl']};
 `;
@@ -159,77 +190,20 @@ const InfoCard = styled.div`
   margin-bottom: ${theme.spacing.lg};
 `;
 
-const InfoText = styled.p`
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  color: ${theme.colors.text.secondary};
-  line-height: ${theme.typography.lineHeights.loose};
-  margin-bottom: ${theme.spacing.md};
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const Code = styled.code`
-  background: rgba(0, 0, 0, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  color: ${theme.colors.primary};
-`;
-
-const EventsGrid = styled.div`
+const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: ${theme.spacing.lg};
   margin-bottom: ${theme.spacing['2xl']};
 `;
 
-const EventCard = styled(motion.div)`
+const Card = styled(motion.div)`
   background: ${theme.colors.glass.medium};
   backdrop-filter: blur(10px);
   border: 1px solid ${theme.colors.glass.border};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.lg};
   box-shadow: ${theme.shadows.soft};
-`;
-
-const EventCardHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: ${theme.spacing.md};
-`;
-
-const EventName = styled.h4`
-  font-family: ${theme.typography.fonts.display};
-  font-size: ${theme.typography.sizes.h4};
-  color: ${theme.colors.primary};
-  margin: 0;
-  flex: 1;
-`;
-
-const EventDate = styled.p`
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.small};
-  color: ${theme.colors.text.secondary};
-  margin: ${theme.spacing.sm} 0 0 0;
-`;
-
-const DeleteButton = styled(motion.button)`
-  background: rgba(255, 59, 48, 0.2);
-  border: none;
-  color: #D32F2F;
-  padding: ${theme.spacing.sm};
-  border-radius: ${theme.borderRadius.md};
-  cursor: pointer;
-  font-weight: bold;
-  
-  &:hover {
-    background: rgba(255, 59, 48, 0.3);
-  }
 `;
 
 const FormGroup = styled.div`
@@ -284,13 +258,7 @@ const FormTextarea = styled.textarea`
   }
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: ${theme.spacing.md};
-`;
-
 const SubmitButton = styled(motion.button)`
-  flex: 1;
   padding: ${theme.spacing.md} ${theme.spacing.lg};
   background: linear-gradient(135deg, ${theme.colors.primary} 0%, ${theme.colors.secondary} 100%);
   border: none;
@@ -301,6 +269,7 @@ const SubmitButton = styled(motion.button)`
   font-weight: ${theme.typography.weights.medium};
   cursor: pointer;
   box-shadow: ${theme.shadows.soft};
+  width: 100%;
 
   &:disabled {
     opacity: 0.5;
@@ -308,124 +277,60 @@ const SubmitButton = styled(motion.button)`
   }
 `;
 
-const CancelButton = styled(motion.button)`
-  flex: 1;
-  padding: ${theme.spacing.md} ${theme.spacing.lg};
-  background: ${theme.colors.glass.medium};
-  border: 2px solid ${theme.colors.glass.border};
-  border-radius: ${theme.borderRadius.lg};
-  color: ${theme.colors.text.primary};
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  font-weight: ${theme.typography.weights.medium};
-  cursor: pointer;
-`;
-
-const TabContainer = styled.div`
-  display: flex;
-  gap: ${theme.spacing.md};
-  margin-bottom: ${theme.spacing['2xl']};
-  flex-wrap: wrap;
-  border-bottom: 2px solid ${theme.colors.glass.border};
-  padding-bottom: ${theme.spacing.lg};
-`;
-
-const Tab = styled(motion.button)<{ active: boolean }>`
-  padding: ${theme.spacing.md} ${theme.spacing.lg};
-  background: ${props => props.active ? 'linear-gradient(135deg, ' + theme.colors.primary + ' 0%, ' + theme.colors.secondary + ' 100%)' : theme.colors.glass.light};
-  border: ${props => props.active ? 'none' : '2px solid ' + theme.colors.glass.border};
+const DeleteButton = styled(motion.button)`
+  background: rgba(255, 59, 48, 0.2);
+  border: none;
+  color: #D32F2F;
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
   border-radius: ${theme.borderRadius.md};
-  color: ${props => props.active ? 'white' : theme.colors.text.primary};
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  font-weight: ${theme.typography.weights.medium};
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-weight: bold;
+  margin-top: ${theme.spacing.sm};
 
   &:hover {
-    transform: translateY(-2px);
+    background: rgba(255, 59, 48, 0.3);
   }
 `;
 
-const PageEditorCard = styled(motion.div)`
-  background: ${theme.colors.glass.medium};
-  backdrop-filter: blur(10px);
-  border: 1px solid ${theme.colors.glass.border};
+const UploadZone = styled(motion.div)<{ isDragging: boolean }>`
+  border: 2px dashed ${props => props.isDragging ? theme.colors.primary : theme.colors.glass.border};
   border-radius: ${theme.borderRadius.lg};
-  padding: ${theme.spacing.xl};
-  margin-bottom: ${theme.spacing.lg};
-`;
-
-const EditorLabel = styled.label`
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.small};
-  color: ${theme.colors.text.secondary};
-  font-weight: ${theme.typography.weights.medium};
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  display: block;
-  margin-bottom: ${theme.spacing.sm};
-`;
-
-const EditorInput = styled.input`
-  width: 100%;
-  padding: ${theme.spacing.md};
-  margin-bottom: ${theme.spacing.lg};
-  border: 2px solid ${theme.colors.glass.border};
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.glass.light};
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  color: ${theme.colors.text.primary};
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${theme.colors.primary};
-    background: white;
-  }
-`;
-
-const EditorTextarea = styled.textarea`
-  width: 100%;
-  padding: ${theme.spacing.md};
-  margin-bottom: ${theme.spacing.lg};
-  border: 2px solid ${theme.colors.glass.border};
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.glass.light};
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  color: ${theme.colors.text.primary};
-  box-sizing: border-box;
-  min-height: 150px;
-  resize: vertical;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${theme.colors.primary};
-    background: white;
-  }
-`;
-
-const SaveButton = styled(motion.button)`
-  padding: ${theme.spacing.md} ${theme.spacing.xl};
-  background: linear-gradient(135deg, ${theme.colors.primary} 0%, ${theme.colors.secondary} 100%);
-  border: none;
-  border-radius: ${theme.borderRadius.lg};
-  color: white;
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  font-weight: ${theme.typography.weights.medium};
+  padding: ${theme.spacing['3xl']};
+  text-align: center;
+  background: ${props => props.isDragging ? 'rgba(255, 107, 157, 0.1)' : theme.colors.glass.light};
   cursor: pointer;
-  width: 100%;
-  box-shadow: ${theme.shadows.soft};
+  transition: all 0.3s ease;
+  margin-bottom: ${theme.spacing['2xl']};
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &:hover {
+    border-color: ${theme.colors.primary};
+    background: rgba(255, 107, 157, 0.05);
   }
+`;
+
+const PhotoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: ${theme.spacing.lg};
+`;
+
+const PhotoCard = styled(motion.div)`
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: ${theme.borderRadius.md};
+  overflow: hidden;
+  background: ${theme.colors.glass.medium};
+  border: 1px solid ${theme.colors.glass.border};
+`;
+
+const PhotoImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const HiddenInput = styled.input`
+  display: none;
 `;
 
 export default function Admin() {
@@ -435,33 +340,36 @@ export default function Admin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
-  
-  // Event management state
-  const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents();
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [formData, setFormData] = useState<CountdownEvent>({
-    name: '',
-    date: '',
-    description: '',
-  });
-  const [savingEvent, setSavingEvent] = useState(false);
+  const [activeTab, setActiveTab] = useState('events');
 
-  // Page editing state
-  const [selectedPage, setSelectedPage] = useState<string>('letter');
-  const pages = [
-    { id: 'letter', name: 'Love Letter' },
-    { id: 'timeline', name: 'Timeline' },
-    { id: 'wishes', name: 'Wishes & Dreams' },
-    { id: 'home', name: 'Home' },
-  ];
-  
+  // Hooks for all content types
+  const { events, addEvent, deleteEvent } = useEvents();
+  const { events: timelineEvents, addEvent: addTimelineEvent, deleteEvent: deleteTimelineEvent } = useTimelineEvents();
+  const { questions, addQuestion, deleteQuestion } = useQuizQuestions();
+  const { dreams, addDream, deleteDream } = useDreams();
+  const { reasons, addReason, deleteReason } = useReasons();
+  const { photos, uploading, uploadPhoto, deletePhoto } = usePhotos();
+
+  // Page content
+  const [selectedPage, setSelectedPage] = useState('letter');
   const { content: pageContent, updateContent: updatePageContent, loading: pageLoading } = usePageContent(selectedPage);
   const [editingContent, setEditingContent] = useState<PageContent>({});
+
+  // Form states
+  const [eventForm, setEventForm] = useState<CountdownEvent>({ name: '', date: '', description: '' });
+  const [timelineForm, setTimelineForm] = useState<TimelineEvent>({ date: '', title: '', description: '', emoji: '💕' });
+  const [quizForm, setQuizForm] = useState<QuizQuestion>({ question: '', options: ['', '', '', ''], correctAnswer: 0 });
+  const [dreamForm, setDreamForm] = useState<Dream>({ title: '', description: '', icon: '✨' });
+  const [reasonForm, setReasonForm] = useState<Reason>({ text: '' });
+
+  const [saving, setSaving] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!auth || !isFirebaseConfigured) {
       setLoading(false);
-      setError('Firebase is not configured. Please add your Firebase credentials to .env file.');
+      setError('Firebase is not configured');
       return;
     }
 
@@ -473,7 +381,6 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
 
-  // Update editing content when page content changes
   useEffect(() => {
     if (pageContent) {
       setEditingContent(pageContent);
@@ -484,11 +391,7 @@ export default function Admin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!auth || !isFirebaseConfigured) {
-      setError('Firebase is not configured. Please add your Firebase credentials to .env file.');
-      return;
-    }
+    if (!auth || !isFirebaseConfigured) return;
 
     setError('');
     setLoggingIn(true);
@@ -496,7 +399,7 @@ export default function Admin() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
+      setError(err.message || 'Failed to sign in');
     } finally {
       setLoggingIn(false);
     }
@@ -504,7 +407,6 @@ export default function Admin() {
 
   const handleLogout = async () => {
     if (!auth) return;
-
     try {
       await signOut(auth);
     } catch (err: any) {
@@ -512,63 +414,136 @@ export default function Admin() {
     }
   };
 
+  // Event handlers
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.date) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    setSavingEvent(true);
+    setSaving(true);
     try {
-      await addEvent({
-        name: formData.name,
-        date: formData.date,
-        description: formData.description || '',
-      });
-      setFormData({ name: '', date: '', description: '' });
-      setShowEventForm(false);
+      await addEvent(eventForm);
+      setEventForm({ name: '', date: '', description: '' });
+      alert('Event added!');
     } catch (err) {
       alert('Failed to add event');
     } finally {
-      setSavingEvent(false);
+      setSaving(false);
     }
   };
 
-  const handleDeleteEvent = async (id: string | undefined) => {
-    if (!id || !confirm('Are you sure you want to delete this event?')) return;
-    
+  const handleAddTimelineEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
     try {
-      await deleteEvent(id);
+      await addTimelineEvent(timelineForm);
+      setTimelineForm({ date: '', title: '', description: '', emoji: '💕' });
+      alert('Timeline event added!');
     } catch (err) {
-      alert('Failed to delete event');
+      alert('Failed to add timeline event');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddQuizQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await addQuestion(quizForm);
+      setQuizForm({ question: '', options: ['', '', '', ''], correctAnswer: 0 });
+      alert('Quiz question added!');
+    } catch (err) {
+      alert('Failed to add quiz question');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddDream = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await addDream(dreamForm);
+      setDreamForm({ title: '', description: '', icon: '✨' });
+      alert('Dream added!');
+    } catch (err) {
+      alert('Failed to add dream');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddReason = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await addReason(reasonForm);
+      setReasonForm({ text: '' });
+      alert('Reason added!');
+    } catch (err) {
+      alert('Failed to add reason');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleSavePage = async () => {
+    setSaving(true);
     try {
-      setSavingEvent(true);
       const success = await updatePageContent(editingContent);
       if (success) {
-        alert('Page content saved successfully!');
+        alert('Page content saved!');
       } else {
-        alert('Failed to save page content');
+        alert('Failed to save');
       }
     } catch (err) {
-      alert('Error saving page content');
+      alert('Error saving');
     } finally {
-      setSavingEvent(false);
+      setSaving(false);
+    }
+  };
+
+  // Photo upload handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        try {
+          await uploadPhoto(file);
+        } catch (err) {
+          alert('Failed to upload photo');
+        }
+      }
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (const file of Array.from(files)) {
+      try {
+        await uploadPhoto(file);
+      } catch (err) {
+        alert('Failed to upload photo');
+      }
     }
   };
 
   if (loading) {
     return (
       <AdminContainer>
-        <LoginCard
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <LoginCard initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Title>Loading...</Title>
         </LoginCard>
       </AdminContainer>
@@ -578,58 +553,25 @@ export default function Admin() {
   if (!user) {
     return (
       <AdminContainer>
-        <LoginCard
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        <LoginCard initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <Title>Admin Login</Title>
-
           <Form onSubmit={handleLogin}>
             <InputGroup>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
-                required
-                disabled={loggingIn}
-              />
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loggingIn} />
             </InputGroup>
-
             <InputGroup>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={loggingIn}
-              />
+              <Label>Password</Label>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loggingIn} />
             </InputGroup>
-
             <AnimatePresence>
               {error && (
-                <ErrorMessage
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
+                <ErrorMessage initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   {error}
                 </ErrorMessage>
               )}
             </AnimatePresence>
-
-            <Button
-              type="submit"
-              disabled={loggingIn}
-              whileHover={{ scale: loggingIn ? 1 : 1.02 }}
-              whileTap={{ scale: loggingIn ? 1 : 0.98 }}
-            >
+            <Button type="submit" disabled={loggingIn} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               {loggingIn ? 'Signing in...' : 'Sign In'}
             </Button>
           </Form>
@@ -642,265 +584,293 @@ export default function Admin() {
     <AdminContainer>
       <DashboardContainer>
         <Header>
-          <WelcomeText>Welcome, {user.email}!</WelcomeText>
-          <LogoutButton
-            onClick={handleLogout}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <WelcomeText>Admin Dashboard</WelcomeText>
+          <LogoutButton onClick={handleLogout} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             Sign Out
           </LogoutButton>
         </Header>
 
-        <Section>
-          <SectionTitle>Admin Dashboard</SectionTitle>
-          <InfoCard>
-            <InfoText>
-              Welcome to the Valentine's Day website admin panel. This is where you can manage
-              content, upload photos, and customize the experience.
-            </InfoText>
-          </InfoCard>
-        </Section>
-
-        <Section>
-          <SectionTitle>Manage Countdown Events</SectionTitle>
-          <InfoCard>
-            <InfoText>
-              Add, edit, or delete countdown events. These will automatically display on the countdown page,
-              with the closest event always shown.
-            </InfoText>
-            <Button
-              onClick={() => setShowEventForm(!showEventForm)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              style={{ marginTop: theme.spacing.lg, width: '100%' }}
+        <MainTabContainer>
+          {[
+            { id: 'events', name: 'Countdown Events' },
+            { id: 'timeline', name: 'Timeline' },
+            { id: 'quiz', name: 'Quiz' },
+            { id: 'dreams', name: 'Dreams' },
+            { id: 'reasons', name: 'Reasons' },
+            { id: 'photos', name: 'Photos' },
+            { id: 'pages', name: 'Page Content' },
+          ].map((tab) => (
+            <MainTab
+              key={tab.id}
+              active={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {showEventForm ? '✕ Cancel' : '+ Add New Event'}
-            </Button>
-          </InfoCard>
+              {tab.name}
+            </MainTab>
+          ))}
+        </MainTabContainer>
 
-          <AnimatePresence>
-            {showEventForm && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <InfoCard>
-                  <form onSubmit={handleAddEvent}>
-                    <FormGroup>
-                      <FormLabel>Event Name *</FormLabel>
-                      <FormInput
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g., Our Anniversary"
-                        required
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <FormLabel>Date *</FormLabel>
-                      <FormInput
-                        type="datetime-local"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        required
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <FormLabel>Description (Optional)</FormLabel>
-                      <FormTextarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Add a description for this event..."
-                      />
-                    </FormGroup>
-
-                    <ButtonGroup>
-                      <SubmitButton
-                        type="submit"
-                        disabled={savingEvent}
-                        whileHover={{ scale: savingEvent ? 1 : 1.02 }}
-                        whileTap={{ scale: savingEvent ? 1 : 0.98 }}
-                      >
-                        {savingEvent ? 'Saving...' : 'Save Event'}
-                      </SubmitButton>
-                      <CancelButton
-                        type="button"
-                        onClick={() => {
-                          setShowEventForm(false);
-                          setFormData({ name: '', date: '', description: '' });
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Cancel
-                      </CancelButton>
-                    </ButtonGroup>
-                  </form>
-                </InfoCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {eventsLoading ? (
+        {/* COUNTDOWN EVENTS */}
+        {activeTab === 'events' && (
+          <Section>
+            <SectionTitle>Manage Countdown Events</SectionTitle>
             <InfoCard>
-              <InfoText>Loading events...</InfoText>
+              <form onSubmit={handleAddEvent}>
+                <FormGroup>
+                  <FormLabel>Event Name *</FormLabel>
+                  <FormInput value={eventForm.name} onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })} required />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Date *</FormLabel>
+                  <FormInput type="datetime-local" value={eventForm.date} onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })} required />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Description</FormLabel>
+                  <FormTextarea value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} />
+                </FormGroup>
+                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {saving ? 'Saving...' : 'Add Event'}
+                </SubmitButton>
+              </form>
             </InfoCard>
-          ) : events.length === 0 ? (
-            <InfoCard>
-              <InfoText>No events yet. Create your first countdown event!</InfoText>
-            </InfoCard>
-          ) : (
-            <EventsGrid>
+            <Grid>
               {events.map((event) => (
-                <EventCard
-                  key={event.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <EventCardHeader>
-                    <div>
-                      <EventName>{event.name}</EventName>
-                      <EventDate>
-                        {new Date(event.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </EventDate>
-                    </div>
-                    <DeleteButton
-                      onClick={() => handleDeleteEvent(event.id)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Delete
-                    </DeleteButton>
-                  </EventCardHeader>
-                  {event.description && (
-                    <p style={{ margin: '0', fontSize: '14px', color: theme.colors.text.secondary }}>
-                      {event.description}
-                    </p>
-                  )}
-                </EventCard>
+                <Card key={event.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h4>{event.name}</h4>
+                  <p>{new Date(event.date).toLocaleString()}</p>
+                  {event.description && <p>{event.description}</p>}
+                  <DeleteButton onClick={() => deleteEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                </Card>
               ))}
-            </EventsGrid>
-          )}
-        </Section>
+            </Grid>
+          </Section>
+        )}
 
-        <Section>
-          <SectionTitle>Edit Page Content</SectionTitle>
-          
-          <TabContainer>
-            {pages.map((page) => (
-              <Tab
-                key={page.id}
-                active={selectedPage === page.id}
-                onClick={() => setSelectedPage(page.id)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {page.name}
-              </Tab>
-            ))}
-          </TabContainer>
-
-          {pageLoading ? (
+        {/* TIMELINE EVENTS */}
+        {activeTab === 'timeline' && (
+          <Section>
+            <SectionTitle>Manage Timeline Events</SectionTitle>
             <InfoCard>
-              <InfoText>Loading page content...</InfoText>
+              <form onSubmit={handleAddTimelineEvent}>
+                <FormGroup>
+                  <FormLabel>Date *</FormLabel>
+                  <FormInput type="date" value={timelineForm.date} onChange={(e) => setTimelineForm({ ...timelineForm, date: e.target.value })} required />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Title *</FormLabel>
+                  <FormInput value={timelineForm.title} onChange={(e) => setTimelineForm({ ...timelineForm, title: e.target.value })} required />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Description</FormLabel>
+                  <FormTextarea value={timelineForm.description} onChange={(e) => setTimelineForm({ ...timelineForm, description: e.target.value })} />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Emoji</FormLabel>
+                  <FormInput value={timelineForm.emoji} onChange={(e) => setTimelineForm({ ...timelineForm, emoji: e.target.value })} />
+                </FormGroup>
+                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {saving ? 'Saving...' : 'Add Timeline Event'}
+                </SubmitButton>
+              </form>
             </InfoCard>
-          ) : (
-            <PageEditorCard
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+            <Grid>
+              {timelineEvents.map((event) => (
+                <Card key={event.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h4>{event.emoji} {event.title}</h4>
+                  <p>{event.date}</p>
+                  <p>{event.description}</p>
+                  <DeleteButton onClick={() => deleteTimelineEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                </Card>
+              ))}
+            </Grid>
+          </Section>
+        )}
+
+        {/* QUIZ QUESTIONS */}
+        {activeTab === 'quiz' && (
+          <Section>
+            <SectionTitle>Manage Quiz Questions</SectionTitle>
+            <InfoCard>
+              <form onSubmit={handleAddQuizQuestion}>
+                <FormGroup>
+                  <FormLabel>Question *</FormLabel>
+                  <FormInput value={quizForm.question} onChange={(e) => setQuizForm({ ...quizForm, question: e.target.value })} required />
+                </FormGroup>
+                {quizForm.options.map((opt, idx) => (
+                  <FormGroup key={idx}>
+                    <FormLabel>Option {idx + 1} *</FormLabel>
+                    <FormInput
+                      value={opt}
+                      onChange={(e) => {
+                        const newOpts = [...quizForm.options];
+                        newOpts[idx] = e.target.value;
+                        setQuizForm({ ...quizForm, options: newOpts });
+                      }}
+                      required
+                    />
+                  </FormGroup>
+                ))}
+                <FormGroup>
+                  <FormLabel>Correct Answer (0-3)</FormLabel>
+                  <FormInput type="number" min="0" max="3" value={quizForm.correctAnswer} onChange={(e) => setQuizForm({ ...quizForm, correctAnswer: parseInt(e.target.value) })} required />
+                </FormGroup>
+                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {saving ? 'Saving...' : 'Add Quiz Question'}
+                </SubmitButton>
+              </form>
+            </InfoCard>
+            <Grid>
+              {questions.map((q) => (
+                <Card key={q.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h4>{q.question}</h4>
+                  {q.options.map((opt, idx) => (
+                    <p key={idx} style={{ fontWeight: idx === q.correctAnswer ? 'bold' : 'normal' }}>
+                      {idx + 1}. {opt} {idx === q.correctAnswer && '✓'}
+                    </p>
+                  ))}
+                  <DeleteButton onClick={() => deleteQuestion(q.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                </Card>
+              ))}
+            </Grid>
+          </Section>
+        )}
+
+        {/* DREAMS */}
+        {activeTab === 'dreams' && (
+          <Section>
+            <SectionTitle>Manage Dreams</SectionTitle>
+            <InfoCard>
+              <form onSubmit={handleAddDream}>
+                <FormGroup>
+                  <FormLabel>Title *</FormLabel>
+                  <FormInput value={dreamForm.title} onChange={(e) => setDreamForm({ ...dreamForm, title: e.target.value })} required />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Description *</FormLabel>
+                  <FormTextarea value={dreamForm.description} onChange={(e) => setDreamForm({ ...dreamForm, description: e.target.value })} required />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Icon (emoji)</FormLabel>
+                  <FormInput value={dreamForm.icon} onChange={(e) => setDreamForm({ ...dreamForm, icon: e.target.value })} />
+                </FormGroup>
+                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {saving ? 'Saving...' : 'Add Dream'}
+                </SubmitButton>
+              </form>
+            </InfoCard>
+            <Grid>
+              {dreams.map((dream) => (
+                <Card key={dream.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h4>{dream.icon} {dream.title}</h4>
+                  <p>{dream.description}</p>
+                  <DeleteButton onClick={() => deleteDream(dream.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                </Card>
+              ))}
+            </Grid>
+          </Section>
+        )}
+
+        {/* REASONS */}
+        {activeTab === 'reasons' && (
+          <Section>
+            <SectionTitle>Manage Reasons I Love You</SectionTitle>
+            <InfoCard>
+              <form onSubmit={handleAddReason}>
+                <FormGroup>
+                  <FormLabel>Reason *</FormLabel>
+                  <FormInput value={reasonForm.text} onChange={(e) => setReasonForm({ text: e.target.value })} required />
+                </FormGroup>
+                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {saving ? 'Saving...' : 'Add Reason'}
+                </SubmitButton>
+              </form>
+            </InfoCard>
+            <Grid>
+              {reasons.map((reason) => (
+                <Card key={reason.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <p>{reason.text}</p>
+                  <DeleteButton onClick={() => deleteReason(reason.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                </Card>
+              ))}
+            </Grid>
+          </Section>
+        )}
+
+        {/* PHOTOS */}
+        {activeTab === 'photos' && (
+          <Section>
+            <SectionTitle>Manage Photo Gallery</SectionTitle>
+            <UploadZone
+              isDragging={isDragging}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              whileHover={{ scale: 1.01 }}
             >
-              <FormGroup>
-                <EditorLabel>Title</EditorLabel>
-                <EditorInput
-                  type="text"
-                  value={editingContent.title || ''}
-                  onChange={(e) => setEditingContent({ ...editingContent, title: e.target.value })}
-                  placeholder="Page title..."
-                />
-              </FormGroup>
+              <p>{uploading ? '📤 Uploading...' : '📸 Click or drag photos here'}</p>
+            </UploadZone>
+            <HiddenInput ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} />
+            <PhotoGrid>
+              {photos.map((photo) => (
+                <PhotoCard key={photo.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <PhotoImage src={photo.url} alt="" />
+                  <DeleteButton onClick={() => deletePhoto(photo.id!, photo.url)} whileHover={{ scale: 1.05 }} style={{ position: 'absolute', top: 8, right: 8 }}>
+                    Delete
+                  </DeleteButton>
+                </PhotoCard>
+              ))}
+            </PhotoGrid>
+          </Section>
+        )}
 
-              <FormGroup>
-                <EditorLabel>Subtitle</EditorLabel>
-                <EditorInput
-                  type="text"
-                  value={editingContent.subtitle || ''}
-                  onChange={(e) => setEditingContent({ ...editingContent, subtitle: e.target.value })}
-                  placeholder="Page subtitle..."
-                />
-              </FormGroup>
-
-              <FormGroup>
-                <EditorLabel>Main Content</EditorLabel>
-                <EditorTextarea
-                  value={editingContent.content || editingContent.message || ''}
-                  onChange={(e) => setEditingContent({ ...editingContent, content: e.target.value, message: e.target.value })}
-                  placeholder="Enter page content..."
-                />
-              </FormGroup>
-
-              <SaveButton
-                disabled={savingEvent}
-                onClick={handleSavePage}
-                whileHover={{ scale: savingEvent ? 1 : 1.02 }}
-                whileTap={{ scale: savingEvent ? 1 : 0.98 }}
-              >
-                {savingEvent ? 'Saving...' : 'Save Page Content'}
-              </SaveButton>
-            </PageEditorCard>
-          )}
-        </Section>
-
-        <Section>
-          <SectionTitle>Quick Setup Guide</SectionTitle>
-          <InfoCard>
-            <InfoText>
-              <strong>1. Firebase Configuration:</strong> Make sure you've created a <Code>.env</Code> file
-              based on <Code>.env.example</Code> and filled in your Firebase credentials.
-            </InfoText>
-            <InfoText>
-              <strong>2. Photo Gallery:</strong> Photos can be uploaded to Firebase Storage and managed
-              through the PhotoGallery component. Update the photo URLs in the component or store them
-              in Firestore.
-            </InfoText>
-            <InfoText>
-              <strong>3. Countdown Date:</strong> The anniversary countdown is currently set to December 4, 2026.
-              You can change this in <Code>src/pages/Countdown.tsx</Code>.
-            </InfoText>
-            <InfoText>
-              <strong>4. Timeline Events:</strong> Edit relationship milestones in <Code>src/pages/Timeline.tsx</Code>.
-            </InfoText>
-            <InfoText>
-              <strong>5. Love Letter:</strong> Customize the romantic letter content in <Code>src/pages/Letter.tsx</Code>.
-            </InfoText>
-          </InfoCard>
-        </Section>
-
-        <Section>
-          <SectionTitle>Future Enhancements</SectionTitle>
-          <InfoCard>
-            <InfoText>
-              This admin panel can be extended with:
-            </InfoText>
-            <InfoText>• Rich text editor for the love letter</InfoText>
-            <InfoText>• Photo upload interface with drag & drop</InfoText>
-            <InfoText>• Timeline event manager (add/edit/delete)</InfoText>
-            <InfoText>• Quiz question editor</InfoText>
-            <InfoText>• Dreams and wishes content manager</InfoText>
-            <InfoText>• Analytics dashboard showing page views</InfoText>
-          </InfoCard>
-        </Section>
+        {/* PAGE CONTENT */}
+        {activeTab === 'pages' && (
+          <Section>
+            <SectionTitle>Edit Page Content</SectionTitle>
+            <MainTabContainer>
+              {[
+                { id: 'letter', name: 'Love Letter' },
+                { id: 'timeline', name: 'Timeline' },
+                { id: 'wishes', name: 'Wishes' },
+                { id: 'home', name: 'Home' },
+              ].map((page) => (
+                <MainTab
+                  key={page.id}
+                  active={selectedPage === page.id}
+                  onClick={() => setSelectedPage(page.id)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {page.name}
+                </MainTab>
+              ))}
+            </MainTabContainer>
+            {pageLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <InfoCard>
+                <FormGroup>
+                  <FormLabel>Title</FormLabel>
+                  <FormInput value={editingContent.title || ''} onChange={(e) => setEditingContent({ ...editingContent, title: e.target.value })} />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Subtitle</FormLabel>
+                  <FormInput value={editingContent.subtitle || ''} onChange={(e) => setEditingContent({ ...editingContent, subtitle: e.target.value })} />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Content</FormLabel>
+                  <FormTextarea value={editingContent.content || editingContent.message || ''} onChange={(e) => setEditingContent({ ...editingContent, content: e.target.value, message: e.target.value })} />
+                </FormGroup>
+                <SubmitButton onClick={handleSavePage} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {saving ? 'Saving...' : 'Save Page Content'}
+                </SubmitButton>
+              </InfoCard>
+            )}
+          </Section>
+        )}
       </DashboardContainer>
     </AdminContainer>
   );
