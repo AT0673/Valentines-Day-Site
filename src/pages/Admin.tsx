@@ -4,6 +4,8 @@ import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
 import { auth, isFirebaseConfigured } from '../config/firebase';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { useEvents, type CountdownEvent } from '../hooks/useEvents';
+import { usePageContent, type PageContent } from '../hooks/usePageContent';
 import type { User } from 'firebase/auth';
 
 const AdminContainer = styled.div`
@@ -178,6 +180,254 @@ const Code = styled.code`
   color: ${theme.colors.primary};
 `;
 
+const EventsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: ${theme.spacing.lg};
+  margin-bottom: ${theme.spacing['2xl']};
+`;
+
+const EventCard = styled(motion.div)`
+  background: ${theme.colors.glass.medium};
+  backdrop-filter: blur(10px);
+  border: 1px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.lg};
+  padding: ${theme.spacing.lg};
+  box-shadow: ${theme.shadows.soft};
+`;
+
+const EventCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: ${theme.spacing.md};
+`;
+
+const EventName = styled.h4`
+  font-family: ${theme.typography.fonts.display};
+  font-size: ${theme.typography.sizes.h4};
+  color: ${theme.colors.primary};
+  margin: 0;
+  flex: 1;
+`;
+
+const EventDate = styled.p`
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.small};
+  color: ${theme.colors.text.secondary};
+  margin: ${theme.spacing.sm} 0 0 0;
+`;
+
+const DeleteButton = styled(motion.button)`
+  background: rgba(255, 59, 48, 0.2);
+  border: none;
+  color: #D32F2F;
+  padding: ${theme.spacing.sm};
+  border-radius: ${theme.borderRadius.md};
+  cursor: pointer;
+  font-weight: bold;
+  
+  &:hover {
+    background: rgba(255, 59, 48, 0.3);
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing.sm};
+  margin-bottom: ${theme.spacing.lg};
+`;
+
+const FormLabel = styled.label`
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.small};
+  color: ${theme.colors.text.secondary};
+  font-weight: ${theme.typography.weights.medium};
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+`;
+
+const FormInput = styled.input`
+  padding: ${theme.spacing.md};
+  border: 2px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.md};
+  background: ${theme.colors.glass.light};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  color: ${theme.colors.text.primary};
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${theme.colors.primary};
+    background: white;
+  }
+`;
+
+const FormTextarea = styled.textarea`
+  padding: ${theme.spacing.md};
+  border: 2px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.md};
+  background: ${theme.colors.glass.light};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  color: ${theme.colors.text.primary};
+  transition: all 0.3s ease;
+  resize: vertical;
+  min-height: 100px;
+
+  &:focus {
+    outline: none;
+    border-color: ${theme.colors.primary};
+    background: white;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: ${theme.spacing.md};
+`;
+
+const SubmitButton = styled(motion.button)`
+  flex: 1;
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: linear-gradient(135deg, ${theme.colors.primary} 0%, ${theme.colors.secondary} 100%);
+  border: none;
+  border-radius: ${theme.borderRadius.lg};
+  color: white;
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  font-weight: ${theme.typography.weights.medium};
+  cursor: pointer;
+  box-shadow: ${theme.shadows.soft};
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const CancelButton = styled(motion.button)`
+  flex: 1;
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: ${theme.colors.glass.medium};
+  border: 2px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.lg};
+  color: ${theme.colors.text.primary};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  font-weight: ${theme.typography.weights.medium};
+  cursor: pointer;
+`;
+
+const TabContainer = styled.div`
+  display: flex;
+  gap: ${theme.spacing.md};
+  margin-bottom: ${theme.spacing['2xl']};
+  flex-wrap: wrap;
+  border-bottom: 2px solid ${theme.colors.glass.border};
+  padding-bottom: ${theme.spacing.lg};
+`;
+
+const Tab = styled(motion.button)<{ active: boolean }>`
+  padding: ${theme.spacing.md} ${theme.spacing.lg};
+  background: ${props => props.active ? 'linear-gradient(135deg, ' + theme.colors.primary + ' 0%, ' + theme.colors.secondary + ' 100%)' : theme.colors.glass.light};
+  border: ${props => props.active ? 'none' : '2px solid ' + theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.md};
+  color: ${props => props.active ? 'white' : theme.colors.text.primary};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  font-weight: ${theme.typography.weights.medium};
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const PageEditorCard = styled(motion.div)`
+  background: ${theme.colors.glass.medium};
+  backdrop-filter: blur(10px);
+  border: 1px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.lg};
+  padding: ${theme.spacing.xl};
+  margin-bottom: ${theme.spacing.lg};
+`;
+
+const EditorLabel = styled.label`
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.small};
+  color: ${theme.colors.text.secondary};
+  font-weight: ${theme.typography.weights.medium};
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: ${theme.spacing.sm};
+`;
+
+const EditorInput = styled.input`
+  width: 100%;
+  padding: ${theme.spacing.md};
+  margin-bottom: ${theme.spacing.lg};
+  border: 2px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.md};
+  background: ${theme.colors.glass.light};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  color: ${theme.colors.text.primary};
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${theme.colors.primary};
+    background: white;
+  }
+`;
+
+const EditorTextarea = styled.textarea`
+  width: 100%;
+  padding: ${theme.spacing.md};
+  margin-bottom: ${theme.spacing.lg};
+  border: 2px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.md};
+  background: ${theme.colors.glass.light};
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  color: ${theme.colors.text.primary};
+  box-sizing: border-box;
+  min-height: 150px;
+  resize: vertical;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${theme.colors.primary};
+    background: white;
+  }
+`;
+
+const SaveButton = styled(motion.button)`
+  padding: ${theme.spacing.md} ${theme.spacing.xl};
+  background: linear-gradient(135deg, ${theme.colors.primary} 0%, ${theme.colors.secondary} 100%);
+  border: none;
+  border-radius: ${theme.borderRadius.lg};
+  color: white;
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  font-weight: ${theme.typography.weights.medium};
+  cursor: pointer;
+  width: 100%;
+  box-shadow: ${theme.shadows.soft};
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 export default function Admin() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -185,6 +435,29 @@ export default function Admin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  
+  // Event management state
+  const { events, loading: eventsLoading, addEvent, updateEvent, deleteEvent } = useEvents();
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [formData, setFormData] = useState<CountdownEvent>({
+    name: '',
+    date: '',
+    description: '',
+  });
+  const [savingEvent, setSavingEvent] = useState(false);
+
+  // Page editing state
+  const [activeTab, setActiveTab] = useState<string>('events');
+  const [selectedPage, setSelectedPage] = useState<string>('letter');
+  const pages = [
+    { id: 'letter', name: 'Love Letter' },
+    { id: 'timeline', name: 'Timeline' },
+    { id: 'wishes', name: 'Wishes & Dreams' },
+    { id: 'home', name: 'Home' },
+  ];
+  
+  const { content: pageContent, updateContent: updatePageContent, loading: pageLoading } = usePageContent(selectedPage);
+  const [editingContent, setEditingContent] = useState<PageContent>({});
 
   useEffect(() => {
     if (!auth || !isFirebaseConfigured) {
@@ -200,6 +473,15 @@ export default function Admin() {
 
     return () => unsubscribe();
   }, []);
+
+  // Update editing content when page content changes
+  useEffect(() => {
+    if (pageContent) {
+      setEditingContent(pageContent);
+    } else {
+      setEditingContent({});
+    }
+  }, [pageContent, selectedPage]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,6 +510,56 @@ export default function Admin() {
       await signOut(auth);
     } catch (err: any) {
       console.error('Logout error:', err);
+    }
+  };
+
+  const handleAddEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.date) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    setSavingEvent(true);
+    try {
+      await addEvent({
+        name: formData.name,
+        date: formData.date,
+        description: formData.description || '',
+      });
+      setFormData({ name: '', date: '', description: '' });
+      setShowEventForm(false);
+    } catch (err) {
+      alert('Failed to add event');
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string | undefined) => {
+    if (!id || !confirm('Are you sure you want to delete this event?')) return;
+    
+    try {
+      await deleteEvent(id);
+    } catch (err) {
+      alert('Failed to delete event');
+    }
+  };
+
+  const handleSavePage = async () => {
+    try {
+      setSavingEvent(true);
+      const success = await updatePageContent(editingContent);
+      if (success) {
+        alert('Page content saved successfully!');
+      } else {
+        alert('Failed to save page content');
+      }
+    } catch (err) {
+      alert('Error saving page content');
+    } finally {
+      setSavingEvent(false);
     }
   };
 
@@ -332,8 +664,205 @@ export default function Admin() {
         </Section>
 
         <Section>
-          <SectionTitle>Quick Setup Guide</SectionTitle>
+          <SectionTitle>Manage Countdown Events</SectionTitle>
           <InfoCard>
+            <InfoText>
+              Add, edit, or delete countdown events. These will automatically display on the countdown page,
+              with the closest event always shown.
+            </InfoText>
+            <Button
+              onClick={() => setShowEventForm(!showEventForm)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ marginTop: theme.spacing.lg, width: '100%' }}
+            >
+              {showEventForm ? '✕ Cancel' : '+ Add New Event'}
+            </Button>
+          </InfoCard>
+
+          <AnimatePresence>
+            {showEventForm && (
+              <InfoCard
+                as={motion.div}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <form onSubmit={handleAddEvent}>
+                  <FormGroup>
+                    <FormLabel>Event Name *</FormLabel>
+                    <FormInput
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g., Our Anniversary"
+                      required
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Date *</FormLabel>
+                    <FormInput
+                      type="datetime-local"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormTextarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Add a description for this event..."
+                    />
+                  </FormGroup>
+
+                  <ButtonGroup>
+                    <SubmitButton
+                      type="submit"
+                      disabled={savingEvent}
+                      whileHover={{ scale: savingEvent ? 1 : 1.02 }}
+                      whileTap={{ scale: savingEvent ? 1 : 0.98 }}
+                    >
+                      {savingEvent ? 'Saving...' : 'Save Event'}
+                    </SubmitButton>
+                    <CancelButton
+                      type="button"
+                      onClick={() => {
+                        setShowEventForm(false);
+                        setFormData({ name: '', date: '', description: '' });
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Cancel
+                    </CancelButton>
+                  </ButtonGroup>
+                </form>
+              </InfoCard>
+            )}
+          </AnimatePresence>
+
+          {eventsLoading ? (
+            <InfoCard>
+              <InfoText>Loading events...</InfoText>
+            </InfoCard>
+          ) : events.length === 0 ? (
+            <InfoCard>
+              <InfoText>No events yet. Create your first countdown event!</InfoText>
+            </InfoCard>
+          ) : (
+            <EventsGrid>
+              {events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <EventCardHeader>
+                    <div>
+                      <EventName>{event.name}</EventName>
+                      <EventDate>
+                        {new Date(event.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </EventDate>
+                    </div>
+                    <DeleteButton
+                      onClick={() => handleDeleteEvent(event.id)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Delete
+                    </DeleteButton>
+                  </EventCardHeader>
+                  {event.description && (
+                    <p style={{ margin: '0', fontSize: '14px', color: theme.colors.text.secondary }}>
+                      {event.description}
+                    </p>
+                  )}
+                </EventCard>
+              ))}
+            </EventsGrid>
+          )}
+        </Section>
+
+        <Section>
+          <SectionTitle>Edit Page Content</SectionTitle>
+          
+          <TabContainer>
+            {pages.map((page) => (
+              <Tab
+                key={page.id}
+                active={selectedPage === page.id}
+                onClick={() => setSelectedPage(page.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {page.name}
+              </Tab>
+            ))}
+          </TabContainer>
+
+          {pageLoading ? (
+            <InfoCard>
+              <InfoText>Loading page content...</InfoText>
+            </InfoCard>
+          ) : (
+            <PageEditorCard
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <FormGroup>
+                <EditorLabel>Title</EditorLabel>
+                <EditorInput
+                  type="text"
+                  value={editingContent.title || ''}
+                  onChange={(e) => setEditingContent({ ...editingContent, title: e.target.value })}
+                  placeholder="Page title..."
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <EditorLabel>Subtitle</EditorLabel>
+                <EditorInput
+                  type="text"
+                  value={editingContent.subtitle || ''}
+                  onChange={(e) => setEditingContent({ ...editingContent, subtitle: e.target.value })}
+                  placeholder="Page subtitle..."
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <EditorLabel>Main Content</EditorLabel>
+                <EditorTextarea
+                  value={editingContent.content || editingContent.message || ''}
+                  onChange={(e) => setEditingContent({ ...editingContent, content: e.target.value, message: e.target.value })}
+                  placeholder="Enter page content..."
+                />
+              </FormGroup>
+
+              <SaveButton
+                disabled={savingEvent}
+                onClick={handleSavePage}
+                whileHover={{ scale: savingEvent ? 1 : 1.02 }}
+                whileTap={{ scale: savingEvent ? 1 : 0.98 }}
+              >
+                {savingEvent ? 'Saving...' : 'Save Page Content'}
+              </SaveButton>
+            </PageEditorCard>
+          )}
+        </Section>
+
+        <Section>
             <InfoText>
               <strong>1. Firebase Configuration:</strong> Make sure you've created a <Code>.env</Code> file
               based on <Code>.env.example</Code> and filled in your Firebase credentials.

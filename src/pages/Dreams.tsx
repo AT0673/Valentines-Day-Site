@@ -114,33 +114,33 @@ const FloatingParticle = styled(motion.div)`
 const dreams = [
   {
     icon: '🏖️',
-    title: 'Travel the World',
-    description: 'Explore beautiful places together, from tropical beaches to snowy mountains, creating memories in every corner of the globe.',
+    title: 'Visit Cornwall',
+    description: 'Would it not be amazing to explore the beach and walk the sand dunes and horrify the poor villages of Cornwall together? (i didn\'t forget) ',
   },
   {
     icon: '🏡',
-    title: 'Build Our Home',
-    description: 'Create a warm, loving space that reflects us—filled with laughter, comfort, and all our favorite things.',
+    title: 'A House with Cats and Dogs',
+    description: 'A beautiful cottage surrounded by trees and strawberries, and like a bazillion cats and dogs running around us. (we need a mainecoon and a Kingsley)',
   },
   {
-    icon: '🎓',
-    title: 'Grow Together',
-    description: 'Support each other through every challenge and achievement, becoming the best versions of ourselves side by side.',
+    icon: '💎',
+    title: 'Matching Jewelry',
+    description: 'I want like matching rings or necklaces or something cute that we can wear to show everyone that we\'re together forever. (I may be a little possessive, im sorry)',
   },
   {
-    icon: '🌟',
-    title: 'Chase Our Passions',
-    description: 'Encourage each other to pursue our dreams, celebrate our successes, and turn our wildest ideas into reality.',
+    icon: '✈️',
+    title: 'Complete the China Trip',
+    description: 'I\'m so excited to finally go to China with you and meet the family, and go surfing, and eat all the sushi, and go karaoke until my throat is dead. (I\'m so sorry for being a shit singer..)',
   },
   {
-    icon: '👨‍👩‍👧‍👦',
-    title: 'Start a Family',
-    description: 'Build a family filled with love, laughter, and endless adventures, passing on our values and creating new traditions.',
+    icon: '🏛️',
+    title: 'Explore York',
+    description: 'This is SO close now.. I can\'t believe we didn\'t get valentines week off.. but I\'m so excited to finally go there and eat loads of sushi and do devious things..',
   },
   {
-    icon: '💫',
-    title: 'Create Magic Daily',
-    description: 'Find joy in the little moments, surprise each other with kindness, and never stop making ordinary days extraordinary.',
+    icon: '🎙️',
+    title: 'Become a Twitch Streamer',
+    description: 'On EVERYONES soul we WILL become streamers together. We shall become the next speed and kai cenat and get loads of simps to donate all thier savings to us',
   },
 ];
 

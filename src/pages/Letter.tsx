@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
+import { useEffect, useState } from 'react';
 import { theme } from '../styles/theme';
+import { usePageContent } from '../hooks/usePageContent';
 
 const LetterContainer = styled.div`
   min-height: 100vh;
@@ -125,12 +127,37 @@ const HeartDecoration = styled(motion.div)`
 `;
 
 export default function Letter() {
+  const { content: pageContent } = usePageContent('letter');
+  const [letterContent, setLetterContent] = useState<string>('');
+
+  // Default letter content
+  const defaultContent = `As I sit here thinking about us, I find myself overwhelmed with gratitude for every moment we've shared together. You've brought so much light, laughter, and love into my life that I sometimes wonder how I ever lived without you.
+
+From our first conversation to this very moment, you've shown me what it means to truly connect with someone on every level. Your kindness, your humor, your intelligence, and your beautiful heart have captivated me completely. Every day with you feels like a gift I never knew I needed.
+
+I love the way you laugh at my jokes, even the terrible ones. I love how you make everything more colorful, more meaningful, more alive. I love how you challenge me to be better, to dream bigger, to love deeper. With you, I've discovered parts of myself I didn't know existed.
+
+This website is just a small token of how much you mean to me. Every page, every word, every moment captured here is a reflection of my love for you. But no website, no letter, no words could ever truly express the depth of what I feel.
+
+Thank you for being you. Thank you for choosing me. Thank you for every smile, every hug, every shared dream. I can't wait to see what adventures await us, because I know that as long as we're together, every day will be extraordinary.`;
+
+  useEffect(() => {
+    if (pageContent?.content) {
+      setLetterContent(pageContent.content);
+    } else {
+      setLetterContent(defaultContent);
+    }
+  }, [pageContent]);
+
   const today = new Date();
   const formattedDate = today.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
+
+  // Split content into paragraphs for animation
+  const paragraphs = letterContent.split('\n\n').filter(p => p.trim());
 
   return (
     <LetterContainer>
@@ -172,62 +199,21 @@ export default function Letter() {
         </LetterHeader>
 
         <LetterContent>
-          <Paragraph
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-          >
-            As I sit here thinking about us, I find myself overwhelmed with gratitude for
-            every moment we've shared together. You've brought so much light, laughter, and
-            love into my life that I sometimes wonder how I ever lived without you.
-          </Paragraph>
-
-          <Paragraph
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            From our first conversation to this very moment, you've shown me what it means to
-            truly connect with someone on every level. Your kindness, your humor, your
-            intelligence, and your beautiful heart have captivated me completely. Every day
-            with you feels like a gift I never knew I needed.
-          </Paragraph>
-
-          <Paragraph
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-          >
-            I love the way you laugh at my jokes, even the terrible ones. I love how you make
-            everything more colorful, more meaningful, more alive. I love how you challenge me
-            to be better, to dream bigger, to love deeper. With you, I've discovered parts of
-            myself I didn't know existed.
-          </Paragraph>
-
-          <Paragraph
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            This website is just a small token of how much you mean to me. Every page, every
-            word, every moment captured here is a reflection of my love for you. But no
-            website, no letter, no words could ever truly express the depth of what I feel.
-          </Paragraph>
-
-          <Paragraph
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.9 }}
-          >
-            Thank you for being you. Thank you for choosing me. Thank you for every smile,
-            every hug, every shared dream. I can't wait to see what adventures await us,
-            because I know that as long as we're together, every day will be extraordinary.
-          </Paragraph>
+          {paragraphs.map((paragraph, index) => (
+            <Paragraph
+              key={index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
+            >
+              {paragraph}
+            </Paragraph>
+          ))}
 
           <Signature
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 1.0 }}
+            transition={{ duration: 0.6, delay: 0.5 + paragraphs.length * 0.1 }}
           >
             Forever yours, with all my love ♥
           </Signature>

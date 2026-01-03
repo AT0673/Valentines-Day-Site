@@ -1,6 +1,8 @@
 import styled from '@emotion/styled';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { theme } from '../styles/theme';
+import { usePageContent } from '../hooks/usePageContent';
 import RotatingHeart from '../components/Hearts/RotatingHeart';
 import LoveCounter from '../components/shared/LoveCounter';
 import PhotoGallery from '../components/Gallery/PhotoGallery';
@@ -48,6 +50,17 @@ const Subtitle = styled(motion.p)`
 const RELATIONSHIP_START_DATE = new Date('2025-12-04T00:00:00');
 
 export default function Home() {
+  const { content: pageContent } = usePageContent('home');
+  const [title, setTitle] = useState('For Judy Jiao');
+  const [subtitle, setSubtitle] = useState('Every moment with you is a treasure');
+
+  useEffect(() => {
+    if (pageContent) {
+      if (pageContent.title) setTitle(pageContent.title);
+      if (pageContent.subtitle) setSubtitle(pageContent.subtitle);
+    }
+  }, [pageContent]);
+
   return (
     <HomeContainer>
       <HeroSection
@@ -60,14 +73,14 @@ export default function Home() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          For Judy Jiao
+          {title}
         </Title>
         <Subtitle
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          Every moment with you is a treasure
+          {subtitle}
         </Subtitle>
 
         <RotatingHeart />

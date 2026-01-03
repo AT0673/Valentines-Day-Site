@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
+import { useEffect, useState } from 'react';
 import { theme } from '../styles/theme';
+import { usePageContent } from '../hooks/usePageContent';
 
 const TimelineContainer = styled.div`
   min-height: 100vh;
@@ -163,6 +165,20 @@ const timelineEvents = [
 ];
 
 export default function Timeline() {
+  const { content: pageContent } = usePageContent('timeline');
+  const [events, setEvents] = useState(timelineEvents);
+  const [title, setTitle] = useState('Our Journey Together');
+  const [subtitle, setSubtitle] = useState('Every moment is a milestone');
+
+  useEffect(() => {
+    if (pageContent) {
+      if (pageContent.title) setTitle(pageContent.title);
+      if (pageContent.subtitle) setSubtitle(pageContent.subtitle);
+      if (pageContent.events && Array.isArray(pageContent.events)) {
+        setEvents(pageContent.events);
+      }
+    }
+  }, [pageContent]);
 
   return (
     <TimelineContainer>
@@ -172,19 +188,19 @@ export default function Timeline() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          Our Journey Together
+          {title}
         </Title>
         <Subtitle
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Every moment is a milestone
+          {subtitle}
         </Subtitle>
       </Header>
 
       <TimelinePath>
-        {timelineEvents.map((event, index) => {
+        {events.map((event, index) => {
           const alignment = index % 2 === 0 ? 'left' : 'right';
 
           return (

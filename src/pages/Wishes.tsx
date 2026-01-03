@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
 import { useState, useEffect } from 'react';
+import { usePageContent } from '../hooks/usePageContent';
 
 const WishesContainer = styled.div`
   min-height: 100vh;
@@ -127,7 +128,7 @@ const ClickPrompt = styled(motion.div)`
   z-index: 2;
 `;
 
-const wishes = [
+const defaultWishes = [
   {
     emoji: '💫',
     text: 'May every day bring us closer and fill our hearts with even more love.'
@@ -161,7 +162,21 @@ interface Star {
 }
 
 export default function Wishes() {
+  const { content: pageContent } = usePageContent('wishes');
   const [stars, setStars] = useState<Star[]>([]);
+  const [wishes, setWishes] = useState(defaultWishes);
+  const [title, setTitle] = useState('Wishes Upon Stars');
+  const [subtitle, setSubtitle] = useState('Every wish is for us');
+
+  useEffect(() => {
+    if (pageContent) {
+      if (pageContent.title) setTitle(pageContent.title);
+      if (pageContent.subtitle) setSubtitle(pageContent.subtitle);
+      if (pageContent.wishes && Array.isArray(pageContent.wishes)) {
+        setWishes(pageContent.wishes);
+      }
+    }
+  }, [pageContent]);
 
   const createShootingStar = () => {
     const newStar: Star = {
@@ -219,14 +234,14 @@ export default function Wishes() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          Wishes Upon Stars
+          {title}
         </Title>
         <Subtitle
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Every wish is for us
+          {subtitle}
         </Subtitle>
       </Header>
 
