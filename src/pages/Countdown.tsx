@@ -56,8 +56,7 @@ const CountdownGrid = styled.div`
 `;
 
 const CountdownBox = styled(motion.div)`
-  background: ${theme.colors.glass.medium};
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid ${theme.colors.glass.border};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing['2xl']};
@@ -65,7 +64,6 @@ const CountdownBox = styled(motion.div)`
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease;
-  will-change: transform;
 
   &::before {
     content: '';
@@ -156,8 +154,7 @@ const EventsList = styled.div`
 `;
 
 const EventItem = styled(motion.div)`
-  background: ${theme.colors.glass.light};
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.6);
   border: 1px solid ${theme.colors.glass.border};
   border-radius: ${theme.borderRadius.md};
   padding: ${theme.spacing.lg} ${theme.spacing.xl};
@@ -165,10 +162,9 @@ const EventItem = styled(motion.div)`
   width: 100%;
   cursor: pointer;
   transition: all 0.3s ease;
-  will-change: transform, background;
 
   &:hover {
-    background: ${theme.colors.glass.medium};
+    background: rgba(255, 255, 255, 0.8);
     transform: translateX(4px) scale(1.02);
   }
 `;
