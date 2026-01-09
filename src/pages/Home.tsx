@@ -7,7 +7,6 @@ import RotatingHeart from '../components/Hearts/RotatingHeart';
 import LoveCounter from '../components/shared/LoveCounter';
 import PhotoGallery from '../components/Gallery/PhotoGallery';
 import ReasonsGrid from '../components/shared/ReasonsGrid';
-import { g } from 'framer-motion/client';
 
 const HomeContainer = styled.div`
   min-height: 100vh;

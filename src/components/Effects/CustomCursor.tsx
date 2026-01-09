@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { theme } from '../../styles/theme';
 
 const CursorDot = styled(motion.div)`
@@ -14,6 +14,7 @@ const CursorDot = styled(motion.div)`
   pointer-events: none;
   z-index: 10000;
   mix-blend-mode: difference;
+  will-change: transform;
 
   @media (max-width: ${theme.breakpoints.mobile}) {
     display: none;
@@ -31,6 +32,7 @@ const CursorRing = styled(motion.div)`
   pointer-events: none;
   z-index: 10000;
   opacity: 0.5;
+  will-change: transform;
 
   @media (max-width: ${theme.breakpoints.mobile}) {
     display: none;
@@ -42,6 +44,7 @@ const Trail = styled(motion.div)`
   pointer-events: none;
   z-index: 9999;
   font-size: 16px;
+  will-change: transform, opacity;
 
   @media (max-width: ${theme.breakpoints.mobile}) {
     display: none;
@@ -58,10 +61,17 @@ interface TrailItem {
 const heartEmojis = ['💕', '💖', '💗', '💝', '💘', '🌸', '✨', '💫'];
 
 export default function CustomCursor() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [trails, setTrails] = useState<TrailItem[]>([]);
   const [isHovering, setIsHovering] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Use refs to avoid re-renders
+  const lastTrailTime = useRef(0);
+  const trailThrottle = 150; // ms between trails
+
+  // Use motion values for better performance (doesn't trigger re-renders)
+  const cursorX = useMotionValue(0);
+  const cursorY = useMotionValue(0);
 
   useEffect(() => {
     // Check if mobile
@@ -75,89 +85,107 @@ export default function CustomCursor() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    // Update cursor position using motion values (no re-render)
+    cursorX.set(e.clientX);
+    cursorY.set(e.clientY);
+
+    // Throttle trail creation
+    const now = Date.now();
+    if (now - lastTrailTime.current > trailThrottle && Math.random() > 0.92) {
+      lastTrailTime.current = now;
+
+      const newTrail: TrailItem = {
+        id: now + Math.random(),
+        x: e.clientX,
+        y: e.clientY,
+        emoji: heartEmojis[Math.floor(Math.random() * heartEmojis.length)],
+      };
+
+      setTrails(prev => {
+        // Limit max trails to prevent memory issues
+        const updated = [...prev, newTrail];
+        return updated.length > 10 ? updated.slice(-10) : updated;
+      });
+
+      // Remove trail after animation
+      setTimeout(() => {
+        setTrails(prev => prev.filter(t => t.id !== newTrail.id));
+      }, 1500);
+    }
+  }, [cursorX, cursorY]);
+
+  const handleMouseOver = useCallback((e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const shouldHover =
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'A' ||
+      !!target.closest('button') ||
+      !!target.closest('a');
+
+    setIsHovering(shouldHover);
+  }, []);
+
   useEffect(() => {
     if (isMobile) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-
-      // Create trail effect occasionally
-      if (Math.random() > 0.85) {
-        const newTrail: TrailItem = {
-          id: Date.now() + Math.random(),
-          x: e.clientX,
-          y: e.clientY,
-          emoji: heartEmojis[Math.floor(Math.random() * heartEmojis.length)],
-        };
-
-        setTrails(prev => [...prev, newTrail]);
-
-        // Remove trail after animation
-        setTimeout(() => {
-          setTrails(prev => prev.filter(t => t.id !== newTrail.id));
-        }, 1500);
-      }
-    };
-
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'A' ||
-        target.closest('button') ||
-        target.closest('a')
-      ) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
-    };
 
     // Hide default cursor
     document.body.style.cursor = 'none';
 
-    // Add event listeners
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseover', handleMouseOver);
+    // Add event listeners with passive flag for better performance
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mouseover', handleMouseOver, { passive: true });
 
     return () => {
       document.body.style.cursor = 'auto';
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseover', handleMouseOver);
     };
-  }, [isMobile]);
+  }, [isMobile, handleMouseMove, handleMouseOver]);
 
   if (isMobile) return null;
 
   return (
     <>
       <CursorDot
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: -6,
+          translateY: -6,
+        }}
         animate={{
-          x: mousePosition.x - 6,
-          y: mousePosition.y - 6,
           scale: isHovering ? 1.5 : 1,
         }}
         transition={{
-          type: 'spring',
-          stiffness: 500,
-          damping: 28,
+          scale: {
+            type: 'spring',
+            stiffness: 300,
+            damping: 20,
+          },
         }}
       />
 
       <CursorRing
+        style={{
+          x: cursorX,
+          y: cursorY,
+          translateX: -20,
+          translateY: -20,
+        }}
         animate={{
-          x: mousePosition.x - 20,
-          y: mousePosition.y - 20,
           scale: isHovering ? 1.5 : 1,
         }}
         transition={{
-          type: 'spring',
-          stiffness: 150,
-          damping: 15,
+          scale: {
+            type: 'spring',
+            stiffness: 200,
+            damping: 15,
+          },
         }}
       />
 
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {trails.map(trail => (
           <Trail
             key={trail.id}
@@ -175,9 +203,10 @@ export default function CustomCursor() {
             }}
             exit={{
               opacity: 0,
+              scale: 0,
             }}
             transition={{
-              duration: 1.5,
+              duration: 1.2,
               ease: 'easeOut',
             }}
           >
