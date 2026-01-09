@@ -33,7 +33,7 @@ export function useTimelineEvents() {
 
     try {
       setLoading(true);
-      const q = query(collection(db, 'timelineEvents'), orderBy('order', 'asc'));
+      const q = query(collection(db, 'timelineEvents'), orderBy('date', 'asc'));
       const querySnapshot = await getDocs(q);
       const fetchedEvents: TimelineEvent[] = [];
 

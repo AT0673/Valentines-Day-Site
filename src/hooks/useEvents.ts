@@ -67,7 +67,7 @@ export function useEvents() {
         ...event,
         createdAt: new Date(),
       });
-      setEvents([...events, { ...event, id: docRef.id }]);
+      await fetchEvents(); // Re-fetch to ensure proper ordering
       setError(null);
       return docRef.id;
     } catch (err) {
@@ -86,9 +86,7 @@ export function useEvents() {
     try {
       const docRef = doc(db, 'events', id);
       await updateDoc(docRef, event);
-      setEvents(
-        events.map((e) => (e.id === id ? { ...e, ...event } : e))
-      );
+      await fetchEvents(); // Re-fetch to ensure proper ordering after update
       setError(null);
     } catch (err) {
       console.error('Error updating event:', err);
