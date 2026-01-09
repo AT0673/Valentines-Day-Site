@@ -279,7 +279,8 @@ export default function Countdown() {
             <CelebrationText>🎉 {nextEvent.name}! 🎉</CelebrationText>
           </motion.div>
           <Message>
-            Happy special day, my love! Every moment with you is a celebration.
+            WE DID IT!! WE MADE IT TO {nextEvent.name.toUpperCase()}! I AM SO PROUD OF US AND I LOVE YOU SO
+            MUCH. HERE'S TO MANY MANY MANY MANY MORE BEAUTIFUL MOMENTS TOGETHER! ❤️
           </Message>
         </CelebrationContainer>
       </CountdownContainer>
@@ -326,7 +327,7 @@ export default function Countdown() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          Every second brings us closer to another beautiful milestone in our journey together.
+          Welcome to my list of upcoming amazing moments and events with the most handsome amazing boyfriend.
         </Message>
 
         {upcomingEvents.length > 0 && (

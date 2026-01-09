@@ -776,7 +776,7 @@ export default function Admin() {
                   <h4>{event.name}</h4>
                   <p>{new Date(event.date).toLocaleString()}</p>
                   {event.description && <p>{event.description}</p>}
-                  <DeleteButton onClick={() => deleteEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  <DeleteButton type="button" onClick={() => deleteEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
                 </Card>
               ))}
             </Grid>
@@ -824,8 +824,8 @@ export default function Admin() {
                   <p>{event.date}</p>
                   <p>{event.description}</p>
                   <ButtonGroup>
-                    <SubmitButton onClick={() => { setEditingTimelineId(event.id!); setTimelineForm(event); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
-                    <DeleteButton onClick={() => deleteTimelineEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                    <SubmitButton type="button" onClick={() => { setEditingTimelineId(event.id!); setTimelineForm(event); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton type="button" onClick={() => deleteTimelineEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
                   </ButtonGroup>
                 </Card>
               ))}
@@ -883,8 +883,8 @@ export default function Admin() {
                     </p>
                   ))}
                   <ButtonGroup>
-                    <SubmitButton onClick={() => { setEditingQuizId(q.id!); setQuizForm(q); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
-                    <DeleteButton onClick={() => deleteQuestion(q.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                    <SubmitButton type="button" onClick={() => { setEditingQuizId(q.id!); setQuizForm(q); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton type="button" onClick={() => deleteQuestion(q.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
                   </ButtonGroup>
                 </Card>
               ))}
@@ -928,8 +928,8 @@ export default function Admin() {
                   <h4>{dream.icon} {dream.title}</h4>
                   <p>{dream.description}</p>
                   <ButtonGroup>
-                    <SubmitButton onClick={() => { setEditingDreamId(dream.id!); setDreamForm(dream); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
-                    <DeleteButton onClick={() => deleteDream(dream.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                    <SubmitButton type="button" onClick={() => { setEditingDreamId(dream.id!); setDreamForm(dream); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton type="button" onClick={() => deleteDream(dream.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
                   </ButtonGroup>
                 </Card>
               ))}
@@ -964,8 +964,8 @@ export default function Admin() {
                 <Card key={reason.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <p>{reason.text}</p>
                   <ButtonGroup>
-                    <SubmitButton onClick={() => { setEditingReasonId(reason.id!); setReasonForm(reason); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
-                    <DeleteButton onClick={() => deleteReason(reason.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                    <SubmitButton type="button" onClick={() => { setEditingReasonId(reason.id!); setReasonForm(reason); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton type="button" onClick={() => deleteReason(reason.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
                   </ButtonGroup>
                 </Card>
               ))}

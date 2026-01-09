@@ -92,8 +92,7 @@ export default function PhotoGallery() {
       <div className="container">
         <SectionTitle>Judy Jiao Collection</SectionTitle>
         <Description>
-          Every photo tells a story of our journey together. These moments captured in time
-          remind me of all the reasons I love you.
+          Hi, welcome to my shrine ❤️ these are all the photos I absolutely adore of you... the most beautiful amazing perfect girlfriend in the world. I love you so much.
         </Description>
 
         {loading ? (

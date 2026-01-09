@@ -7,6 +7,7 @@ import RotatingHeart from '../components/Hearts/RotatingHeart';
 import LoveCounter from '../components/shared/LoveCounter';
 import PhotoGallery from '../components/Gallery/PhotoGallery';
 import ReasonsGrid from '../components/shared/ReasonsGrid';
+import { g } from 'framer-motion/client';
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -51,8 +52,8 @@ const RELATIONSHIP_START_DATE = new Date('2025-12-04T00:00:00');
 
 export default function Home() {
   const { content: pageContent } = usePageContent('home');
-  const [title, setTitle] = useState('For Judy Jiao');
-  const [subtitle, setSubtitle] = useState('Every moment with you is a treasure');
+  const [title, setTitle] = useState('Hello my beautiful girlfriend');
+  const [subtitle, setSubtitle] = useState('you\'re so gorgeous');
 
   useEffect(() => {
     if (pageContent) {
