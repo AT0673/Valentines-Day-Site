@@ -208,22 +208,23 @@ export default function Countdown() {
     }) || null;
   }, [events]);
 
-  // Get all upcoming events (excluding the one being counted down)
+  // Get all upcoming events - show all future events
   const upcomingEvents = useMemo(() => {
     if (!events || events.length === 0) return [];
     
     const now = new Date();
-    const futureEvents = events.filter(event => {
+    return events.filter(event => {
       const eventDate = new Date(event.date);
       return eventDate > now;
     });
-    
-    // Exclude the current countdown event and return the rest
-    if (nextEvent) {
-      return futureEvents.filter(event => event.id !== nextEvent.id);
-    }
-    return futureEvents;
-  }, [events, nextEvent]);
+  }, [events]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Events:', events);
+    console.log('Next Event:', nextEvent);
+    console.log('Upcoming Events:', upcomingEvents);
+  }, [events, nextEvent, upcomingEvents]);
 
   // Memoize the date to prevent creating a new Date object on every render
   const targetDate = useMemo(() => {
@@ -281,7 +282,7 @@ export default function Countdown() {
           Welcome to my list of upcoming amazing moments and events with the most handsome amazing boyfriend.
         </Message>
 
-        {upcomingEvents.length > 0 && (
+        {!loading && (
           <NextEventsSection
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -292,26 +293,32 @@ export default function Countdown() {
               <span>🌍</span>
             </NextEventsTitle>
             <NextEventsList>
-              {upcomingEvents.map((event, index) => {
-                const eventDate = new Date(event.date);
-                const formattedDate = eventDate.toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                });
+              {upcomingEvents.length > 0 ? (
+                upcomingEvents.map((event, index) => {
+                  const eventDate = new Date(event.date);
+                  const formattedDate = eventDate.toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  });
 
-                return (
-                  <EventCard
-                    key={event.id || index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
-                  >
-                    <EventCardName>{event.name}</EventCardName>
-                    <EventCardDate>{formattedDate}</EventCardDate>
-                  </EventCard>
-                );
-              })}
+                  return (
+                    <EventCard
+                      key={event.id || `event-${index}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
+                    >
+                      <EventCardName>{event.name}</EventCardName>
+                      <EventCardDate>{formattedDate}</EventCardDate>
+                    </EventCard>
+                  );
+                })
+              ) : (
+                <EventCard>
+                  <EventCardName>No upcoming events</EventCardName>
+                </EventCard>
+              )}
             </NextEventsList>
           </NextEventsSection>
         )}
