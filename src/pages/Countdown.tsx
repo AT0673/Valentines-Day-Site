@@ -35,6 +35,16 @@ const Title = styled(motion.h1)`
   }
 `;
 
+const Subtitle = styled(motion.p)`
+  font-family: ${theme.typography.fonts.script};
+  font-size: 24px;
+  color: ${theme.colors.secondary};
+
+  @media (max-width: ${theme.breakpoints.mobile}) {
+    font-size: 18px;
+  }
+`;
+
 const EventName = styled(motion.p)`
   font-family: ${theme.typography.fonts.script};
   font-size: 32px;
@@ -232,6 +242,35 @@ const DEFAULT_EVENTS = [
 ];
 
 export default function Countdown() {
+  // Debug logging
+  useEffect(() => {
+    console.log('Countdown component mounted');
+    return () => console.log('Countdown component unmounted');
+  }, []);
+
+  return (
+    <CountdownContainer>
+      <ContentWrapper>
+        <Title
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          TEST COUNTDOWN PAGE
+        </Title>
+        <Subtitle
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          If you can navigate away from here, the issue is in the component logic
+        </Subtitle>
+      </ContentWrapper>
+    </CountdownContainer>
+  );
+}
+
+function CountdownOLD() {
   const { events: firestoreEvents } = useEvents();
   const [events, setEvents] = useState(DEFAULT_EVENTS);
 
@@ -253,7 +292,7 @@ export default function Countdown() {
     const now = new Date();
     const eventDate = new Date(event.date);
     const closestDate = new Date(closest.date);
-    
+
     if (eventDate > now && eventDate < closestDate) {
       return event;
     }

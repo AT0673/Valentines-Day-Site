@@ -36,8 +36,6 @@ function AppContent() {
 
   return (
     <>
-      <CustomCursor />
-      <MobileTouchEffects />
       {routes}
       <BottomNav />
     </>
