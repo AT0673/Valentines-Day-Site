@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { useEffect, useMemo } from 'react';
 import { theme } from '../styles/theme';
 import { useCountdown } from '../hooks/useCountdown';
+import { useEvents } from '../hooks/useEvents';
 
 const CountdownContainer = styled.div`
   min-height: 100vh;
@@ -128,9 +129,26 @@ export default function Countdown() {
     return () => console.log('Countdown component unmounted');
   }, []);
 
-  const nextEvent = { name: 'Valentine\'s Day 2026 (YORK!)', date: '2026-02-14T00:00:00' };
+  const { events, loading, error } = useEvents();
+
+  // Find the next upcoming event (first event with date in the future)
+  const nextEvent = useMemo(() => {
+    if (!events || events.length === 0) return null;
+    
+    const now = new Date();
+    // Events are already sorted by date ascending, so find first future event
+    return events.find(event => {
+      const eventDate = new Date(event.date);
+      return eventDate > now;
+    }) || null;
+  }, [events]);
+
   // Memoize the date to prevent creating a new Date object on every render
-  const targetDate = useMemo(() => new Date(nextEvent.date), [nextEvent.date]);
+  const targetDate = useMemo(() => {
+    if (!nextEvent) return new Date(); // Fallback to current date if no event
+    return new Date(nextEvent.date);
+  }, [nextEvent ? nextEvent.date : null]); // Use explicit null check for stable dependency
+
   const countdown = useCountdown(targetDate);
 
   const countdownItems = [
@@ -156,7 +174,7 @@ export default function Countdown() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {nextEvent.name}
+          {loading ? 'Loading...' : error ? 'Error loading events' : nextEvent ? nextEvent.name : 'No upcoming events'}
         </EventName>
 
         <CountdownGrid>
