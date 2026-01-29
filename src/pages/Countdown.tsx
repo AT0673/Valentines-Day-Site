@@ -10,7 +10,6 @@ const CountdownContainer = styled.div`
   padding: ${theme.spacing['4xl']} ${theme.spacing.lg};
   padding-bottom: 120px;
   background: ${theme.colors.gradients.peachyBlush};
-  position: relative;
 `;
 
 const ContentWrapper = styled.div`
