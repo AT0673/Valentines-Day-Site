@@ -10,8 +10,6 @@ import Quiz from './pages/Quiz';
 import Wishes from './pages/Wishes';
 import Admin from './pages/Admin';
 import BottomNav from './components/Navigation/BottomNav';
-import CustomCursor from './components/Effects/CustomCursor';
-import MobileTouchEffects from './components/Effects/MobileTouchEffects';
 import './styles/global.css';
 
 function AppContent() {
