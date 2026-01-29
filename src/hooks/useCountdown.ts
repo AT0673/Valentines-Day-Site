@@ -24,7 +24,7 @@ export function useCountdown(targetDate: Date): CountdownData {
 
   useEffect(() => {
     isMountedRef.current = true;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: number | null = null;
 
     const calculateCountdown = () => {
       // Check if component is still mounted before updating state
