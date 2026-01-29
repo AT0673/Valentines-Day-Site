@@ -13,12 +13,14 @@ const CountdownContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 `;
 
 const ContentWrapper = styled.div`
   text-align: center;
   max-width: 900px;
   margin: 0 auto;
+  pointer-events: auto;
 `;
 
 const Title = styled(motion.h1)`
@@ -122,6 +124,7 @@ const Message = styled(motion.p)`
 
 const CelebrationContainer = styled(motion.div)`
   text-align: center;
+  pointer-events: auto;
 `;
 
 const CelebrationText = styled.h2`
