@@ -22,7 +22,7 @@ function AppContent() {
       <CustomCursor />
       <MobileTouchEffects />
       <PageTransition location={location.pathname}>
-        <Routes location={location}>
+        <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/home" element={<Home />} />
           <Route path="/countdown" element={<Countdown />} />

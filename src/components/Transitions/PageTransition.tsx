@@ -179,7 +179,7 @@ export default function PageTransition({ children, location }: PageTransitionPro
         )}
       </AnimatePresence>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         <motion.div
           key={location}
           variants={pageVariants}
