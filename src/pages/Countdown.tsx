@@ -7,8 +7,7 @@ import { useEvents } from '../hooks/useEvents';
 
 const CountdownContainer = styled.div`
   min-height: 100vh;
-  padding: ${theme.spacing['4xl']} ${theme.spacing.lg};
-  padding-bottom: 120px;
+  padding: ${theme.spacing['4xl']} ${theme.spacing.lg} 0;
   background: ${theme.colors.gradients.peachyBlush};
 `;
 
@@ -17,11 +16,12 @@ const ContentWrapper = styled.div`
   max-width: 900px;
   margin: 0 auto;
   padding-top: ${theme.spacing['2xl']};
+  padding-bottom: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 220px);
+  min-height: calc(100vh - ${theme.spacing['4xl']} - 140px);
 `;
 
 const Title = styled(motion.h1)`
@@ -129,8 +129,9 @@ const CelebrationContainer = styled(motion.div)`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 220px);
+  min-height: calc(100vh - ${theme.spacing['4xl']} - 140px);
   padding: ${theme.spacing['2xl']};
+  padding-bottom: 140px;
 `;
 
 const CelebrationText = styled.h2`
