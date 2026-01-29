@@ -18,10 +18,14 @@ export function useCountdown(targetDate: Date): CountdownData {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const calculateCountdown = () => {
       const now = new Date().getTime();
       const target = targetDate.getTime();
       const difference = target - now;
+
+      if (!isMounted) return;
 
       if (difference <= 0) {
         setCountdown({
@@ -51,7 +55,10 @@ export function useCountdown(targetDate: Date): CountdownData {
     calculateCountdown();
     const interval = setInterval(calculateCountdown, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [targetDate]);
 
   return countdown;
