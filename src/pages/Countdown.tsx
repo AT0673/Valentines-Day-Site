@@ -10,17 +10,19 @@ const CountdownContainer = styled.div`
   padding: ${theme.spacing['4xl']} ${theme.spacing.lg};
   padding-bottom: 120px;
   background: ${theme.colors.gradients.peachyBlush};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  position: relative;
 `;
 
 const ContentWrapper = styled.div`
   text-align: center;
   max-width: 900px;
   margin: 0 auto;
-  pointer-events: auto;
+  padding-top: ${theme.spacing['2xl']};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 220px);
 `;
 
 const Title = styled(motion.h1)`
@@ -124,7 +126,12 @@ const Message = styled(motion.p)`
 
 const CelebrationContainer = styled(motion.div)`
   text-align: center;
-  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 220px);
+  padding: ${theme.spacing['2xl']};
 `;
 
 const CelebrationText = styled.h2`
