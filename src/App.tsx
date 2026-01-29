@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Countdown from './pages/Countdown';
@@ -9,14 +9,11 @@ import Quiz from './pages/Quiz';
 import Wishes from './pages/Wishes';
 import Admin from './pages/Admin';
 import BottomNav from './components/Navigation/BottomNav';
-import PageTransition from './components/Transitions/PageTransition';
 import CustomCursor from './components/Effects/CustomCursor';
 import MobileTouchEffects from './components/Effects/MobileTouchEffects';
 import './styles/global.css';
 
 function AppContent() {
-  const location = useLocation();
-
   return (
     <>
       <CustomCursor />
