@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, useRoutes, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
@@ -21,22 +21,24 @@ function AppContent() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  const routes = useRoutes([
+    { path: '/', element: <Landing /> },
+    { path: '/home', element: <Home /> },
+    { path: '/countdown', element: <Countdown /> },
+    { path: '/timeline', element: <Timeline /> },
+    { path: '/letter', element: <Letter /> },
+    { path: '/dreams', element: <Dreams /> },
+    { path: '/quiz', element: <Quiz /> },
+    { path: '/wishes', element: <Wishes /> },
+    { path: '/admin', element: <Admin /> },
+    { path: '*', element: <Navigate to="/" replace /> },
+  ]);
+
   return (
     <>
       <CustomCursor />
       <MobileTouchEffects />
-      <Routes key={location.pathname}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/countdown" element={<Countdown />} />
-        <Route path="/timeline" element={<Timeline />} />
-        <Route path="/letter" element={<Letter />} />
-        <Route path="/dreams" element={<Dreams />} />
-        <Route path="/quiz" element={<Quiz />} />
-        <Route path="/wishes" element={<Wishes />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      {routes}
       <BottomNav />
     </>
   );
