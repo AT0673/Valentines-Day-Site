@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { theme } from '../styles/theme';
 import { useCountdown } from '../hooks/useCountdown';
 
@@ -129,7 +129,9 @@ export default function Countdown() {
   }, []);
 
   const nextEvent = { name: 'Valentine\'s Day 2026 (YORK!)', date: '2026-02-14T00:00:00' };
-  const countdown = useCountdown(new Date(nextEvent.date));
+  // Memoize the date to prevent creating a new Date object on every render
+  const targetDate = useMemo(() => new Date(nextEvent.date), [nextEvent.date]);
+  const countdown = useCountdown(targetDate);
 
   const countdownItems = [
     { value: countdown.days, label: 'Days' },

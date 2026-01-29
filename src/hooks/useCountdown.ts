@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface CountdownData {
   days: number;
@@ -17,19 +17,24 @@ export function useCountdown(targetDate: Date): CountdownData {
     isComplete: false,
   });
 
+  // Use ref to track if component is mounted
+  const isMountedRef = useRef(true);
+  // Use timestamp for stable dependency comparison
+  const targetTimestamp = targetDate.getTime();
+
   useEffect(() => {
+    isMountedRef.current = true;
     let timeoutId: NodeJS.Timeout | null = null;
-    let isCancelled = false;
 
     const calculateCountdown = () => {
-      if (isCancelled) return;
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) return;
 
-      const now = new Date().getTime();
-      const target = targetDate.getTime();
-      const difference = target - now;
+      const now = Date.now();
+      const difference = targetTimestamp - now;
 
       if (difference <= 0) {
-        if (!isCancelled) {
+        if (isMountedRef.current) {
           setCountdown({
             days: 0,
             hours: 0,
@@ -46,7 +51,7 @@ export function useCountdown(targetDate: Date): CountdownData {
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-      if (!isCancelled) {
+      if (isMountedRef.current) {
         setCountdown({
           days,
           hours,
@@ -58,15 +63,16 @@ export function useCountdown(targetDate: Date): CountdownData {
       }
     };
 
+    // Initial calculation
     calculateCountdown();
 
     return () => {
-      isCancelled = true;
+      isMountedRef.current = false;
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
     };
-  }, [targetDate]);
+  }, [targetTimestamp]); // Use timestamp instead of Date object for stable comparison
 
   return countdown;
 }
