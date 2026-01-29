@@ -235,6 +235,12 @@ export default function Countdown() {
   const { events: firestoreEvents } = useEvents();
   const [events, setEvents] = useState(DEFAULT_EVENTS);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Countdown component mounted');
+    return () => console.log('Countdown component unmounted');
+  }, []);
+
   // Use Firestore events if available, otherwise use defaults
   useEffect(() => {
     if (firestoreEvents && firestoreEvents.length > 0) {
