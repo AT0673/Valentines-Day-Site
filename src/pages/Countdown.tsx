@@ -123,6 +123,71 @@ const Message = styled(motion.p)`
   }
 `;
 
+const NextEventsSection = styled(motion.section)`
+  width: 100%;
+  max-width: 600px;
+  margin: ${theme.spacing['4xl']} auto 0;
+`;
+
+const NextEventsTitle = styled(motion.h2)`
+  font-family: ${theme.typography.fonts.display};
+  font-size: 42px;
+  color: ${theme.colors.primary};
+  text-align: center;
+  margin-bottom: ${theme.spacing['2xl']};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${theme.spacing.md};
+
+  @media (max-width: ${theme.breakpoints.mobile}) {
+    font-size: 32px;
+  }
+`;
+
+const NextEventsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing.lg};
+`;
+
+const EventCard = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid ${theme.colors.glass.border};
+  border-radius: ${theme.borderRadius.lg};
+  padding: ${theme.spacing.xl};
+  box-shadow: ${theme.shadows.soft};
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: ${theme.shadows.medium};
+  }
+`;
+
+const EventCardName = styled.div`
+  font-family: ${theme.typography.fonts.script};
+  font-size: 28px;
+  color: ${theme.colors.secondary};
+  margin-bottom: ${theme.spacing.sm};
+
+  @media (max-width: ${theme.breakpoints.mobile}) {
+    font-size: 24px;
+  }
+`;
+
+const EventCardDate = styled.div`
+  font-family: ${theme.typography.fonts.body};
+  font-size: ${theme.typography.sizes.body};
+  color: ${theme.colors.primary};
+  font-weight: ${theme.typography.weights.medium};
+
+  @media (max-width: ${theme.breakpoints.mobile}) {
+    font-size: ${theme.typography.sizes.small};
+  }
+`;
+
 export default function Countdown() {
   useEffect(() => {
     console.log('Countdown component mounted');
@@ -142,6 +207,23 @@ export default function Countdown() {
       return eventDate > now;
     }) || null;
   }, [events]);
+
+  // Get all upcoming events (excluding the one being counted down)
+  const upcomingEvents = useMemo(() => {
+    if (!events || events.length === 0) return [];
+    
+    const now = new Date();
+    const futureEvents = events.filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate > now;
+    });
+    
+    // Exclude the current countdown event and return the rest
+    if (nextEvent) {
+      return futureEvents.filter(event => event.id !== nextEvent.id);
+    }
+    return futureEvents;
+  }, [events, nextEvent]);
 
   // Memoize the date to prevent creating a new Date object on every render
   const targetDate = useMemo(() => {
@@ -198,6 +280,41 @@ export default function Countdown() {
         >
           Welcome to my list of upcoming amazing moments and events with the most handsome amazing boyfriend.
         </Message>
+
+        {upcomingEvents.length > 0 && (
+          <NextEventsSection
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <NextEventsTitle>
+              What's Next?
+              <span>🌍</span>
+            </NextEventsTitle>
+            <NextEventsList>
+              {upcomingEvents.map((event, index) => {
+                const eventDate = new Date(event.date);
+                const formattedDate = eventDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                });
+
+                return (
+                  <EventCard
+                    key={event.id || index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
+                  >
+                    <EventCardName>{event.name}</EventCardName>
+                    <EventCardDate>{formattedDate}</EventCardDate>
+                  </EventCard>
+                );
+              })}
+            </NextEventsList>
+          </NextEventsSection>
+        )}
       </ContentWrapper>
     </CountdownContainer>
   );
