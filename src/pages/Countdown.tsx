@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import styled from '@emotion/styled';
 import { useEffect } from 'react';
 import { theme } from '../styles/theme';
+import { useCountdown } from '../hooks/useCountdown';
 
 const CountdownContainer = styled.div`
   min-height: 100vh;
@@ -127,13 +128,14 @@ export default function Countdown() {
     return () => console.log('Countdown component unmounted');
   }, []);
 
-  // Static test data - no hooks
-  const nextEvent = { name: 'Valentine\'s Day 2026 (YORK!)' };
+  const nextEvent = { name: 'Valentine\'s Day 2026 (YORK!)', date: '2026-02-14T00:00:00' };
+  const countdown = useCountdown(new Date(nextEvent.date));
+
   const countdownItems = [
-    { value: 45, label: 'Days' },
-    { value: 12, label: 'Hours' },
-    { value: 34, label: 'Minutes' },
-    { value: 56, label: 'Seconds' },
+    { value: countdown.days, label: 'Days' },
+    { value: countdown.hours, label: 'Hours' },
+    { value: countdown.minutes, label: 'Minutes' },
+    { value: countdown.seconds, label: 'Seconds' },
   ];
 
   return (
