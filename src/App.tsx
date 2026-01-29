@@ -21,20 +21,18 @@ function AppContent() {
     <>
       <CustomCursor />
       <MobileTouchEffects />
-      <PageTransition location={location.pathname}>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/countdown" element={<Countdown />} />
-          <Route path="/timeline" element={<Timeline />} />
-          <Route path="/letter" element={<Letter />} />
-          <Route path="/dreams" element={<Dreams />} />
-          <Route path="/quiz" element={<Quiz />} />
-          <Route path="/wishes" element={<Wishes />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </PageTransition>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/countdown" element={<Countdown />} />
+        <Route path="/timeline" element={<Timeline />} />
+        <Route path="/letter" element={<Letter />} />
+        <Route path="/dreams" element={<Dreams />} />
+        <Route path="/quiz" element={<Quiz />} />
+        <Route path="/wishes" element={<Wishes />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
       <BottomNav />
     </>
   );
