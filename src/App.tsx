@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Countdown from './pages/Countdown';
@@ -14,11 +15,17 @@ import MobileTouchEffects from './components/Effects/MobileTouchEffects';
 import './styles/global.css';
 
 function AppContent() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
     <>
       <CustomCursor />
       <MobileTouchEffects />
-      <Routes>
+      <Routes key={location.pathname}>
         <Route path="/" element={<Landing />} />
         <Route path="/home" element={<Home />} />
         <Route path="/countdown" element={<Countdown />} />
