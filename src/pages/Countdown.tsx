@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import styled from '@emotion/styled';
 import { useEffect, useMemo } from 'react';
 import { theme } from '../styles/theme';
@@ -158,12 +158,6 @@ const EventCard = styled(motion.div)`
   padding: ${theme.spacing.xl};
   box-shadow: ${theme.shadows.soft};
   text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: ${theme.shadows.medium};
-  }
 `;
 
 const EventCardName = styled.div`
@@ -288,37 +282,66 @@ export default function Countdown() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
           >
-            <NextEventsTitle>
+            <NextEventsTitle
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
+            >
               What's Next?
-              <span>🌍</span>
+              <motion.span
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 1.1, type: 'spring', stiffness: 200 }}
+              >
+                🌍
+              </motion.span>
             </NextEventsTitle>
             <NextEventsList>
-              {upcomingEvents.length > 0 ? (
-                upcomingEvents.map((event, index) => {
-                  const eventDate = new Date(event.date);
-                  const formattedDate = eventDate.toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  });
+              <AnimatePresence mode="popLayout">
+                {upcomingEvents.length > 0 ? (
+                  upcomingEvents.map((event, index) => {
+                    const eventDate = new Date(event.date);
+                    const formattedDate = eventDate.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    });
 
-                  return (
-                    <EventCard
-                      key={event.id || `event-${index}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
-                    >
-                      <EventCardName>{event.name}</EventCardName>
-                      <EventCardDate>{formattedDate}</EventCardDate>
-                    </EventCard>
-                  );
-                })
-              ) : (
-                <EventCard>
-                  <EventCardName>No upcoming events</EventCardName>
-                </EventCard>
-              )}
+                    return (
+                      <EventCard
+                        key={event.id || `event-${index}`}
+                        initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        transition={{ 
+                          duration: 0.5, 
+                          delay: 1.0 + index * 0.15,
+                          type: 'spring',
+                          stiffness: 100,
+                          damping: 15
+                        }}
+                        whileHover={{ 
+                          y: -6, 
+                          scale: 1.02,
+                          transition: { duration: 0.2 }
+                        }}
+                      >
+                        <EventCardName>{event.name}</EventCardName>
+                        <EventCardDate>{formattedDate}</EventCardDate>
+                      </EventCard>
+                    );
+                  })
+                ) : (
+                  <EventCard
+                    key="no-events"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1.0 }}
+                  >
+                    <EventCardName>No upcoming events</EventCardName>
+                  </EventCard>
+                )}
+              </AnimatePresence>
             </NextEventsList>
           </NextEventsSection>
         )}
