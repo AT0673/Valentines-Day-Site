@@ -18,23 +18,26 @@ export function useCountdown(targetDate: Date): CountdownData {
   });
 
   useEffect(() => {
-    let isMounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+    let isCancelled = false;
 
     const calculateCountdown = () => {
+      if (isCancelled) return;
+
       const now = new Date().getTime();
       const target = targetDate.getTime();
       const difference = target - now;
 
-      if (!isMounted) return;
-
       if (difference <= 0) {
-        setCountdown({
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-          isComplete: true,
-        });
+        if (!isCancelled) {
+          setCountdown({
+            days: 0,
+            hours: 0,
+            minutes: 0,
+            seconds: 0,
+            isComplete: true,
+          });
+        }
         return;
       }
 
@@ -43,21 +46,25 @@ export function useCountdown(targetDate: Date): CountdownData {
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-      setCountdown({
-        days,
-        hours,
-        minutes,
-        seconds,
-        isComplete: false,
-      });
+      if (!isCancelled) {
+        setCountdown({
+          days,
+          hours,
+          minutes,
+          seconds,
+          isComplete: false,
+        });
+        timeoutId = setTimeout(calculateCountdown, 1000);
+      }
     };
 
     calculateCountdown();
-    const interval = setInterval(calculateCountdown, 1000);
 
     return () => {
-      isMounted = false;
-      clearInterval(interval);
+      isCancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [targetDate]);
 
