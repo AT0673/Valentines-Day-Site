@@ -38,14 +38,20 @@ export function useWishes() {
     return unsubscribe;
   }, []);
 
-  const addWish = async (text: string, position: { x: number; y: number }) => {
-    if (!db || !isFirebaseConfigured) return;
+  const addWish = async (text: string, position: { x: number; y: number }): Promise<string | null> => {
+    if (!db || !isFirebaseConfigured) return null;
 
-    await addDoc(collection(db, 'wishes'), {
-      text,
-      position,
-      createdAt: Timestamp.now(),
-    });
+    try {
+      const docRef = await addDoc(collection(db, 'wishes'), {
+        text,
+        position,
+        createdAt: Timestamp.now(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding wish:', error);
+      return null;
+    }
   };
 
   return { wishes, loading, addWish };
