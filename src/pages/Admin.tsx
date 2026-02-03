@@ -363,7 +363,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('events');
 
   // Hooks for all content types
-  const { events, addEvent, deleteEvent } = useEvents();
+  const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const { events: timelineEvents, addEvent: addTimelineEvent, updateEvent: updateTimelineEvent, deleteEvent: deleteTimelineEvent } = useTimelineEvents();
   const { questions, addQuestion, updateQuestion, deleteQuestion } = useQuizQuestions();
   const { dreams, addDream, updateDream, deleteDream } = useDreams();
@@ -376,13 +376,14 @@ export default function Admin() {
   const [editingContent, setEditingContent] = useState<PageContent>({});
 
   // Form states
-  const [eventForm, setEventForm] = useState<CountdownEvent>({ name: '', date: '', description: '' });
+  const [eventForm, setEventForm] = useState<CountdownEvent>({ name: '', date: '', description: '', yearlyRecurring: false });
   const [timelineForm, setTimelineForm] = useState<TimelineEvent>({ date: '', title: '', description: '', emoji: '💕' });
   const [quizForm, setQuizForm] = useState<QuizQuestion>({ question: '', options: ['', '', '', ''], correctAnswer: 0 });
   const [dreamForm, setDreamForm] = useState<Dream>({ title: '', description: '', icon: '✨' });
   const [reasonForm, setReasonForm] = useState<Reason>({ text: '' });
 
   // Edit states
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingTimelineId, setEditingTimelineId] = useState<string | null>(null);
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [editingDreamId, setEditingDreamId] = useState<string | null>(null);
@@ -479,10 +480,26 @@ export default function Admin() {
     setSaving(true);
     try {
       await addEvent(eventForm);
-      setEventForm({ name: '', date: '', description: '' });
+      setEventForm({ name: '', date: '', description: '', yearlyRecurring: false });
       alert('Event added!');
     } catch (err) {
       alert('Failed to add event');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEventId) return;
+    setSaving(true);
+    try {
+      await updateEvent(editingEventId, eventForm);
+      setEditingEventId(null);
+      setEventForm({ name: '', date: '', description: '', yearlyRecurring: false });
+      alert('Event updated!');
+    } catch (err) {
+      alert('Failed to update event');
     } finally {
       setSaving(false);
     }
@@ -750,9 +767,9 @@ export default function Admin() {
         {/* COUNTDOWN EVENTS */}
         {activeTab === 'events' && (
           <Section>
-            <SectionTitle>Manage Countdown Events</SectionTitle>
+            <SectionTitle>{editingEventId ? 'Edit' : 'Add'} Countdown Event</SectionTitle>
             <InfoCard>
-              <form onSubmit={handleAddEvent}>
+              <form onSubmit={editingEventId ? handleUpdateEvent : handleAddEvent}>
                 <FormGroup>
                   <FormLabel>Event Name *</FormLabel>
                   <FormInput value={eventForm.name} onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })} required />
@@ -765,9 +782,27 @@ export default function Admin() {
                   <FormLabel>Description</FormLabel>
                   <FormTextarea value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} />
                 </FormGroup>
-                <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  {saving ? 'Saving...' : 'Add Event'}
-                </SubmitButton>
+                <FormGroup>
+                  <FormLabel style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', textTransform: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={eventForm.yearlyRecurring || false}
+                      onChange={(e) => setEventForm({ ...eventForm, yearlyRecurring: e.target.checked })}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    Yearly Recurring (event repeats every year)
+                  </FormLabel>
+                </FormGroup>
+                <ButtonGroup>
+                  <SubmitButton type="submit" disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    {saving ? 'Saving...' : (editingEventId ? 'Update' : 'Add')}
+                  </SubmitButton>
+                  {editingEventId && (
+                    <CancelButton type="button" onClick={() => { setEditingEventId(null); setEventForm({ name: '', date: '', description: '', yearlyRecurring: false }); }} whileHover={{ scale: 1.02 }}>
+                      Cancel
+                    </CancelButton>
+                  )}
+                </ButtonGroup>
               </form>
             </InfoCard>
             <Grid>
@@ -776,7 +811,11 @@ export default function Admin() {
                   <h4>{event.name}</h4>
                   <p>{new Date(event.date).toLocaleString()}</p>
                   {event.description && <p>{event.description}</p>}
-                  <DeleteButton type="button" onClick={() => deleteEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  {event.yearlyRecurring && <p style={{ color: '#4CAF50', fontWeight: 'bold' }}>🔄 Yearly Recurring</p>}
+                  <ButtonGroup>
+                    <SubmitButton type="button" onClick={() => { setEditingEventId(event.id!); setEventForm(event); }} whileHover={{ scale: 1.05 }}>Edit</SubmitButton>
+                    <DeleteButton type="button" onClick={() => deleteEvent(event.id!)} whileHover={{ scale: 1.05 }}>Delete</DeleteButton>
+                  </ButtonGroup>
                 </Card>
               ))}
             </Grid>

@@ -16,6 +16,7 @@ export interface CountdownEvent {
   name: string;
   date: string; // ISO string format
   description?: string;
+  yearlyRecurring?: boolean; // If true, event recurs every year
   createdAt?: Date;
 }
 

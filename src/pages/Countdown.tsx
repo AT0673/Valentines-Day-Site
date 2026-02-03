@@ -191,26 +191,91 @@ export default function Countdown() {
   const { events, loading, error } = useEvents();
 
   // Find the next upcoming event (first event with date in the future)
+  // For yearly recurring events, adjust the year if the event has passed
   const nextEvent = useMemo(() => {
     if (!events || events.length === 0) return null;
-    
+
     const now = new Date();
-    // Events are already sorted by date ascending, so find first future event
-    return events.find(event => {
+
+    // Process events to handle yearly recurring
+    const processedEvents = events.map(event => {
+      let eventDate = new Date(event.date);
+
+      // If event is yearly recurring and has passed this year, move it to next year
+      if (event.yearlyRecurring && eventDate < now) {
+        const currentYear = now.getFullYear();
+        const eventMonth = eventDate.getMonth();
+        const eventDay = eventDate.getDate();
+        const eventHours = eventDate.getHours();
+        const eventMinutes = eventDate.getMinutes();
+
+        // Check if the event has passed this year
+        const thisYearEvent = new Date(currentYear, eventMonth, eventDay, eventHours, eventMinutes);
+
+        if (thisYearEvent < now) {
+          // Move to next year
+          eventDate = new Date(currentYear + 1, eventMonth, eventDay, eventHours, eventMinutes);
+        } else {
+          // Use this year's date
+          eventDate = thisYearEvent;
+        }
+      }
+
+      return { ...event, date: eventDate.toISOString() };
+    });
+
+    // Sort by date and find first future event
+    const sortedEvents = processedEvents.sort((a, b) =>
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    return sortedEvents.find(event => {
       const eventDate = new Date(event.date);
       return eventDate > now;
     }) || null;
   }, [events]);
 
   // Get all upcoming events - show all future events
+  // For yearly recurring events, adjust the year if the event has passed
   const upcomingEvents = useMemo(() => {
     if (!events || events.length === 0) return [];
-    
+
     const now = new Date();
-    return events.filter(event => {
-      const eventDate = new Date(event.date);
-      return eventDate > now;
+
+    // Process events to handle yearly recurring
+    const processedEvents = events.map(event => {
+      let eventDate = new Date(event.date);
+
+      // If event is yearly recurring and has passed this year, move it to next year
+      if (event.yearlyRecurring && eventDate < now) {
+        const currentYear = now.getFullYear();
+        const eventMonth = eventDate.getMonth();
+        const eventDay = eventDate.getDate();
+        const eventHours = eventDate.getHours();
+        const eventMinutes = eventDate.getMinutes();
+
+        // Check if the event has passed this year
+        const thisYearEvent = new Date(currentYear, eventMonth, eventDay, eventHours, eventMinutes);
+
+        if (thisYearEvent < now) {
+          // Move to next year
+          eventDate = new Date(currentYear + 1, eventMonth, eventDay, eventHours, eventMinutes);
+        } else {
+          // Use this year's date
+          eventDate = thisYearEvent;
+        }
+      }
+
+      return { ...event, date: eventDate.toISOString() };
     });
+
+    // Filter future events and sort by date
+    return processedEvents
+      .filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate > now;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [events]);
 
   // Debug logging
