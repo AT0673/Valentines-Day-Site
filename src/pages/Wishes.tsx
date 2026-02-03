@@ -311,7 +311,29 @@ export default function Wishes() {
     []
   );
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <SkyContainer>
+        {bgStars.map((star) => (
+          <BackgroundStar
+            key={star.id}
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+            }}
+            animate={{ opacity: [0.2, 1, 0.2], scale: [1, 1.3, 1] }}
+            transition={{
+              duration: star.duration,
+              repeat: Infinity,
+              delay: star.delay,
+            }}
+          />
+        ))}
+      </SkyContainer>
+    );
+  }
 
   return (
     <SkyContainer ref={containerRef} onClick={handleSkyClick}>
@@ -364,6 +386,7 @@ export default function Wishes() {
             >
               <ExpandedStar
                 data-wish-star
+                aria-label="View wish"
                 onClick={(e: React.MouseEvent) => handleStarClick(e, wish.id)}
                 animate={{
                   scale: [1, 1.05, 1],
@@ -396,7 +419,16 @@ export default function Wishes() {
             }}
             transition={{ duration: 3, repeat: Infinity }}
             whileHover={{ scale: 1.3 }}
+            role="button"
+            tabIndex={0}
+            aria-label="View wish"
             onClick={(e: React.MouseEvent) => handleStarClick(e, wish.id)}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleStarClick(e as unknown as React.MouseEvent, wish.id);
+              }
+            }}
           >
             🌟
           </WishStarButton>
@@ -430,6 +462,7 @@ export default function Wishes() {
           <WishInput
             ref={inputRef}
             key="wish-input"
+            aria-label="Enter your wish"
             placeholder="Make a wish..."
             style={{
               left: `${inputState.x}%`,
