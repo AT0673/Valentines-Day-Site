@@ -321,30 +321,6 @@ export default function Wishes() {
     []
   );
 
-  if (loading) {
-    return (
-      <SkyContainer>
-        {bgStars.map((star) => (
-          <BackgroundStar
-            key={star.id}
-            style={{
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-            }}
-            animate={{ opacity: [0.2, 1, 0.2], scale: [1, 1.3, 1] }}
-            transition={{
-              duration: star.duration,
-              repeat: Infinity,
-              delay: star.delay,
-            }}
-          />
-        ))}
-      </SkyContainer>
-    );
-  }
-
   return (
     <SkyContainer ref={containerRef} onClick={handleSkyClick}>
       {/* Background twinkling stars */}
