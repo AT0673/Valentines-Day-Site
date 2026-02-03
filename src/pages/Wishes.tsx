@@ -284,11 +284,15 @@ export default function Wishes() {
     [expandedWishId, inputState, wishes]
   );
 
+  const submittedRef = useRef(false);
+
   const handleInputSubmit = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
+        e.preventDefault();
         const text = (e.target as HTMLInputElement).value.trim();
         if (text && inputState) {
+          submittedRef.current = true;
           addWish(text, { x: inputState.x, y: inputState.y });
         }
         setInputState(null);
@@ -300,7 +304,13 @@ export default function Wishes() {
   );
 
   const handleInputBlur = useCallback(() => {
-    setInputState(null);
+    // Delay to let onKeyDown fire first
+    setTimeout(() => {
+      if (!submittedRef.current) {
+        setInputState(null);
+      }
+      submittedRef.current = false;
+    }, 100);
   }, []);
 
   const handleStarClick = useCallback(

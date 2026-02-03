@@ -16,10 +16,10 @@ const NavContainer = styled(motion.nav)<{ $isVisible: boolean }>`
   padding: 12px 24px;
 
   /* Glass morphism effect */
-  background: ${theme.colors.glass.medium};
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid ${theme.colors.glass.border};
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: ${theme.borderRadius.full};
   box-shadow: ${theme.shadows.glass};
 
