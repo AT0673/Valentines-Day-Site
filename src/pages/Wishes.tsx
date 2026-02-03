@@ -1,283 +1,323 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
-import { useState, useEffect } from 'react';
-import { usePageContent } from '../hooks/usePageContent';
+import { useWishes } from '../hooks/useWishes';
 
-const WishesContainer = styled.div`
-  min-height: 100vh;
-  padding: ${theme.spacing['4xl']} ${theme.spacing.lg};
-  padding-bottom: 120px;
+// ── Styled Components ──────────────────────────────────────────────
+
+const SkyContainer = styled.div`
+  position: fixed;
+  inset: 0;
   background: linear-gradient(180deg,
     #0a0e27 0%,
     #1a1133 30%,
     #2d1b4e 60%,
     #4a2c5e 100%
   );
-  position: relative;
   overflow: hidden;
+  cursor: crosshair;
 `;
 
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: ${theme.spacing['4xl']};
-  position: relative;
+const Dimmer = styled(motion.div)`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 2;
+  pointer-events: none;
 `;
 
-const Title = styled(motion.h1)`
-  font-family: ${theme.typography.fonts.display};
-  font-size: 56px;
-  color: #f4e4c1;
-  margin-bottom: ${theme.spacing.md};
-  text-shadow: 0 0 20px rgba(244, 228, 193, 0.5);
-
-  @media (max-width: ${theme.breakpoints.mobile}) {
-    font-size: 36px;
-  }
+const BackgroundStar = styled(motion.div)`
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.8);
 `;
 
-const Subtitle = styled(motion.p)`
+const HintText = styled(motion.div)`
+  position: fixed;
+  bottom: 48px;
+  left: 0;
+  right: 0;
+  text-align: center;
   font-family: ${theme.typography.fonts.script};
-  font-size: 24px;
-  color: #d4b5f7;
-  text-shadow: 0 0 10px rgba(212, 181, 247, 0.3);
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  z-index: 1;
+  pointer-events: none;
+`;
 
-  @media (max-width: ${theme.breakpoints.mobile}) {
-    font-size: 18px;
+const WishStarButton = styled(motion.div)`
+  position: absolute;
+  font-size: 24px;
+  cursor: pointer;
+  filter: drop-shadow(0 0 8px rgba(244, 228, 193, 0.6));
+  z-index: 3;
+  user-select: none;
+  transform: translate(-50%, -50%);
+
+  &:hover {
+    filter: drop-shadow(0 0 16px rgba(244, 228, 193, 0.9));
   }
 `;
 
-const WishesGrid = styled.div`
+const ExpandedWishContainer = styled(motion.div)`
+  position: absolute;
+  z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: ${theme.spacing['2xl']};
-  max-width: 800px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
 `;
 
-const WishCard = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: ${theme.borderRadius.xl};
-  padding: ${theme.spacing['2xl']};
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+const ExpandedStar = styled(motion.div)`
+  font-size: 72px;
+  cursor: pointer;
+  filter: drop-shadow(0 0 20px rgba(244, 228, 193, 0.9));
+  user-select: none;
+`;
+
+const WishTextBubble = styled(motion.p)`
+  font-family: ${theme.typography.fonts.script};
+  font-size: 20px;
+  color: #f4e4c1;
+  text-shadow: 0 0 10px rgba(244, 228, 193, 0.5);
   text-align: center;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(244, 228, 193, 0.1) 0%, rgba(212, 181, 247, 0.1) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &:hover::before {
-    opacity: 1;
-  }
+  max-width: 250px;
+  margin-top: 8px;
+  pointer-events: none;
 `;
 
-const WishEmoji = styled.div`
-  font-size: 48px;
-  margin-bottom: ${theme.spacing.md};
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
-`;
-
-const WishText = styled.p`
-  font-family: ${theme.typography.fonts.body};
-  font-size: ${theme.typography.sizes.body};
-  color: rgba(255, 255, 255, 0.9);
-  line-height: ${theme.typography.lineHeights.loose};
-  position: relative;
-  z-index: 1;
-`;
-
-const Star = styled(motion.div)`
+const ShootingStarTrail = styled(motion.div)`
   position: absolute;
-  width: 2px;
-  height: 2px;
-  background: white;
-  border-radius: 50%;
-  box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.8);
-  z-index: 1;
-`;
-
-const ShootingStar = styled(motion.div)`
-  position: absolute;
-  width: 3px;
-  height: 3px;
+  width: 6px;
+  height: 6px;
   background: #f4e4c1;
   border-radius: 50%;
-  box-shadow: 0 0 10px 2px rgba(244, 228, 193, 0.8);
+  box-shadow: 0 0 12px 4px rgba(244, 228, 193, 0.8);
   z-index: 10;
+  pointer-events: none;
 
   &::after {
     content: '';
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 100px;
+    top: 50%;
+    right: 100%;
+    width: 80px;
     height: 2px;
     background: linear-gradient(90deg,
       rgba(244, 228, 193, 0) 0%,
-      rgba(244, 228, 193, 0.8) 50%,
-      rgba(244, 228, 193, 0) 100%
+      rgba(244, 228, 193, 0.8) 100%
     );
-    transform: translateX(-100%);
+    transform: translateY(-50%);
   }
 `;
 
-const WishingStar = styled(motion.div)`
+const WishInput = styled(motion.input)`
   position: absolute;
-  font-size: 40px;
-  cursor: pointer;
-  filter: drop-shadow(0 0 10px rgba(244, 228, 193, 0.6));
-  z-index: 5;
-  user-select: none;
-`;
-
-const ClickPrompt = styled(motion.div)`
-  text-align: center;
-  margin-top: ${theme.spacing['3xl']};
+  z-index: 10;
+  background: transparent;
+  border: 1px solid rgba(244, 228, 193, 0.6);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: #f4e4c1;
   font-family: ${theme.typography.fonts.script};
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.7);
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+  width: 200px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 15px rgba(244, 228, 193, 0.3);
+
+  &::placeholder {
+    color: rgba(244, 228, 193, 0.4);
+  }
 `;
 
-const defaultWishes = [
-  {
-    emoji: '💫',
-    text: 'May every day bring us closer and fill our hearts with even more love.'
-  },
-  {
-    emoji: '🌟',
-    text: 'I wish for countless adventures together, exploring the world hand in hand.'
-  },
-  {
-    emoji: '💖',
-    text: 'May we always find reasons to laugh, even on the toughest days.'
-  },
-  {
-    emoji: '✨',
-    text: 'I wish for us to grow old together, creating memories that last a lifetime.'
-  },
-  {
-    emoji: '🌈',
-    text: 'May our love continue to be a source of strength and inspiration for both of us.'
-  },
-  {
-    emoji: '💝',
-    text: 'I wish for you to always feel as cherished and loved as you make me feel.'
-  }
-];
+// ── Helpers ────────────────────────────────────────────────────────
 
-interface BackgroundStar {
+interface BgStar {
   id: number;
   x: number;
   y: number;
   size: number;
   delay: number;
+  duration: number;
 }
 
 interface ShootingStar {
   id: number;
-  startX: number;
-  startY: number;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
 }
 
-interface WishingStarType {
-  id: number;
+interface InputState {
   x: number;
   y: number;
 }
 
+function generateBackgroundStars(count: number): BgStar[] {
+  const stars: BgStar[] = [];
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 2 + 1,
+      delay: Math.random() * 4,
+      duration: 2 + Math.random() * 3,
+    });
+  }
+  return stars;
+}
+
+function nudgePosition(
+  x: number,
+  y: number,
+  existing: { x: number; y: number }[],
+  minDist: number = 5
+): { x: number; y: number } {
+  const isClear = (px: number, py: number) =>
+    existing.every(
+      (p) => Math.hypot(p.x - px, p.y - py) >= minDist
+    );
+
+  if (isClear(x, y)) return { x, y };
+
+  // Spiral outward
+  for (let r = minDist; r < 50; r += 2) {
+    for (let angle = 0; angle < 360; angle += 30) {
+      const nx = x + r * Math.cos((angle * Math.PI) / 180);
+      const ny = y + r * Math.sin((angle * Math.PI) / 180);
+      const cx = Math.max(2, Math.min(98, nx));
+      const cy = Math.max(2, Math.min(98, ny));
+      if (isClear(cx, cy)) return { x: cx, y: cy };
+    }
+  }
+
+  return { x, y };
+}
+
+// ── Component ──────────────────────────────────────────────────────
+
 export default function Wishes() {
-  const { content: pageContent } = usePageContent('wishes');
-  const [shootingStars, setShootingStars] = useState<ShootingStar[]>([]);
-  const [backgroundStars, setBackgroundStars] = useState<BackgroundStar[]>([]);
-  const [wishingStars, setWishingStars] = useState<WishingStarType[]>([]);
-  const [wishes, setWishes] = useState(defaultWishes);
-  const [title, setTitle] = useState('Wish Upon a Star');
-  const [subtitle, setSubtitle] = useState('Click anywhere in the sky to make a wish together');
+  const { wishes, loading, addWish } = useWishes();
+  const [expandedWishId, setExpandedWishId] = useState<string | null>(null);
+  const [showHint, setShowHint] = useState(true);
+  const [shootingStar, setShootingStar] = useState<ShootingStar | null>(null);
+  const [inputState, setInputState] = useState<InputState | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Generate background stars
+  const bgStars = useMemo(() => generateBackgroundStars(120), []);
+
+  // Auto-hide hint after 4s
   useEffect(() => {
-    const stars: BackgroundStar[] = [];
-    for (let i = 0; i < 100; i++) {
-      stars.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 2 + 1,
-        delay: Math.random() * 3
-      });
-    }
-    setBackgroundStars(stars);
-
-    // Generate wishing stars
-    const wishes: WishingStarType[] = [
-      { id: 1, x: 50, y: 15 },
-      { id: 2, x: 80, y: 35 },
-      { id: 3, x: 40, y: 70 },
-    ];
-    setWishingStars(wishes);
+    const t = setTimeout(() => setShowHint(false), 4000);
+    return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    if (pageContent) {
-      if (pageContent.title) setTitle(pageContent.title);
-      if (pageContent.subtitle) setSubtitle(pageContent.subtitle);
-      if (pageContent.wishes && Array.isArray(pageContent.wishes)) {
-        setWishes(pageContent.wishes);
+  const handleSkyClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don't act if clicking a star, input, or expanded area
+      const target = e.target as HTMLElement;
+      if (
+        target.closest('[data-wish-star]') ||
+        target.closest('input') ||
+        target.closest('[data-expanded]')
+      ) {
+        return;
       }
-    }
-  }, [pageContent]);
 
-  const createShootingStar = (clickX?: number, clickY?: number) => {
-    const newStar: ShootingStar = {
-      id: Date.now() + Math.random(),
-      startX: clickX ?? Math.random() * window.innerWidth,
-      startY: clickY ?? Math.random() * 300
-    };
-
-    setShootingStars(prev => [...prev, newStar]);
-
-    setTimeout(() => {
-      setShootingStars(prev => prev.filter(star => star.id !== newStar.id));
-    }, 2000);
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (Math.random() > 0.6) {
-        createShootingStar();
+      // If something is expanded, collapse it
+      if (expandedWishId) {
+        setExpandedWishId(null);
+        return;
       }
-    }, 3000);
 
-    return () => clearInterval(interval);
+      // If input is showing, dismiss it
+      if (inputState) {
+        setInputState(null);
+        return;
+      }
+
+      // Hide hint on first click
+      setShowHint(false);
+
+      const rect = containerRef.current!.getBoundingClientRect();
+      let xPct = ((e.clientX - rect.left) / rect.width) * 100;
+      let yPct = ((e.clientY - rect.top) / rect.height) * 100;
+
+      // Nudge if too close to existing
+      const existingPositions = wishes.map((w) => ({
+        x: w.position.x,
+        y: w.position.y,
+      }));
+      const nudged = nudgePosition(xPct, yPct, existingPositions);
+      xPct = nudged.x;
+      yPct = nudged.y;
+
+      // Launch shooting star from random top-left area to click position
+      const fromX = Math.random() * 20;
+      const fromY = Math.random() * 20;
+      const star: ShootingStar = {
+        id: Date.now(),
+        fromX,
+        fromY,
+        toX: xPct,
+        toY: yPct,
+      };
+      setShootingStar(star);
+
+      // After animation, show input
+      setTimeout(() => {
+        setShootingStar(null);
+        setInputState({ x: xPct, y: yPct });
+        // Focus after render
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }, 900);
+    },
+    [expandedWishId, inputState, wishes]
+  );
+
+  const handleInputSubmit = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        const text = (e.target as HTMLInputElement).value.trim();
+        if (text && inputState) {
+          addWish(text, { x: inputState.x, y: inputState.y });
+        }
+        setInputState(null);
+      } else if (e.key === 'Escape') {
+        setInputState(null);
+      }
+    },
+    [inputState, addWish]
+  );
+
+  const handleInputBlur = useCallback(() => {
+    setInputState(null);
   }, []);
 
-  const handleContainerClick = (e: React.MouseEvent) => {
-    createShootingStar(e.clientX, e.clientY);
-  };
+  const handleStarClick = useCallback(
+    (e: React.MouseEvent, wishId: string) => {
+      e.stopPropagation();
+      setExpandedWishId((prev) => (prev === wishId ? null : wishId));
+    },
+    []
+  );
+
+  if (loading) return null;
 
   return (
-    <WishesContainer onClick={handleContainerClick}>
+    <SkyContainer ref={containerRef} onClick={handleSkyClick}>
       {/* Background twinkling stars */}
-      {backgroundStars.map(star => (
-        <Star
+      {bgStars.map((star) => (
+        <BackgroundStar
           key={star.id}
           style={{
             left: `${star.x}%`,
@@ -285,105 +325,139 @@ export default function Wishes() {
             width: `${star.size}px`,
             height: `${star.size}px`,
           }}
-          animate={{
-            opacity: [0.2, 1, 0.2],
-            scale: [1, 1.2, 1],
-          }}
+          animate={{ opacity: [0.2, 1, 0.2], scale: [1, 1.3, 1] }}
           transition={{
-            duration: 2 + Math.random() * 2,
+            duration: star.duration,
             repeat: Infinity,
             delay: star.delay,
           }}
         />
       ))}
 
-      {/* Wishing stars (clickable) */}
-      {wishingStars.map(star => (
-        <WishingStar
-          key={star.id}
-          style={{
-            left: `${star.x}%`,
-            top: `${star.y}%`,
-          }}
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 10, -10, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-          }}
-          whileHover={{ scale: 1.3 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            createShootingStar(e.clientX, e.clientY);
-          }}
-        >
-          ⭐
-        </WishingStar>
-      ))}
+      {/* Dimmer overlay when a wish is expanded */}
+      <AnimatePresence>
+        {expandedWishId && (
+          <Dimmer
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Shooting stars */}
-      {shootingStars.map(star => (
-        <ShootingStar
-          key={star.id}
-          initial={{
-            x: star.startX,
-            y: star.startY,
-            opacity: 1
-          }}
-          animate={{
-            x: star.startX + 400,
-            y: star.startY + 400,
-            opacity: 0
-          }}
-          transition={{
-            duration: 1.5,
-            ease: 'easeOut'
-          }}
-        />
-      ))}
+      {/* Wish stars */}
+      {wishes.map((wish) => {
+        const isExpanded = expandedWishId === wish.id;
 
-      <Header>
-        <Title
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {title}
-        </Title>
-        <Subtitle
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          {subtitle}
-        </Subtitle>
-      </Header>
+        if (isExpanded) {
+          return (
+            <ExpandedWishContainer
+              key={wish.id}
+              data-expanded
+              style={{
+                left: `${wish.position.x}%`,
+                top: `${wish.position.y}%`,
+              }}
+              initial={{ scale: 1 }}
+              animate={{ scale: 1 }}
+            >
+              <ExpandedStar
+                data-wish-star
+                onClick={(e: React.MouseEvent) => handleStarClick(e, wish.id)}
+                animate={{
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                🌟
+              </ExpandedStar>
+              <WishTextBubble
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                {wish.text}
+              </WishTextBubble>
+            </ExpandedWishContainer>
+          );
+        }
 
-      <WishesGrid>
-        {wishes.map((wish, index) => (
-          <WishCard
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            whileHover={{ y: -5, scale: 1.02 }}
+        return (
+          <WishStarButton
+            key={wish.id}
+            data-wish-star
+            style={{
+              left: `${wish.position.x}%`,
+              top: `${wish.position.y}%`,
+            }}
+            animate={{
+              scale: [1, 1.1, 1],
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+            whileHover={{ scale: 1.3 }}
+            onClick={(e: React.MouseEvent) => handleStarClick(e, wish.id)}
           >
-            <WishEmoji>{wish.emoji}</WishEmoji>
-            <WishText>{wish.text}</WishText>
-          </WishCard>
-        ))}
-      </WishesGrid>
+            🌟
+          </WishStarButton>
+        );
+      })}
 
-      <ClickPrompt
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        ✨
-      </ClickPrompt>
-    </WishesContainer>
+      {/* Shooting star animation */}
+      <AnimatePresence>
+        {shootingStar && (
+          <ShootingStarTrail
+            key={shootingStar.id}
+            initial={{
+              left: `${shootingStar.fromX}%`,
+              top: `${shootingStar.fromY}%`,
+              opacity: 1,
+            }}
+            animate={{
+              left: `${shootingStar.toX}%`,
+              top: `${shootingStar.toY}%`,
+              opacity: [1, 1, 0.8],
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Wish input */}
+      <AnimatePresence>
+        {inputState && (
+          <WishInput
+            ref={inputRef}
+            key="wish-input"
+            placeholder="Make a wish..."
+            style={{
+              left: `${inputState.x}%`,
+              top: `${inputState.y}%`,
+            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
+            onKeyDown={handleInputSubmit}
+            onBlur={handleInputBlur}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Hint text */}
+      <AnimatePresence>
+        {showHint && (
+          <HintText
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            Tap the sky to make a wish
+          </HintText>
+        )}
+      </AnimatePresence>
+    </SkyContainer>
   );
 }
