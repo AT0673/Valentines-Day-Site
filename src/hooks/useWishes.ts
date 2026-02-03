@@ -21,16 +21,11 @@ export function useWishes() {
     const unsubscribe = onSnapshot(
       collection(db, 'wishes'),
       (snapshot) => {
-        const items = snapshot.docs
-          .filter((doc) => {
-            const data = doc.data();
-            return data.text && data.position?.x != null && data.position?.y != null;
-          })
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: doc.data().createdAt?.toDate?.() ?? new Date(),
-          })) as Wish[];
+        const items = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() ?? new Date(),
+        })) as Wish[];
         setWishes(items);
         setLoading(false);
       },
