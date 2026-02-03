@@ -205,7 +205,7 @@ function nudgePosition(
 // ── Component ──────────────────────────────────────────────────────
 
 export default function Wishes() {
-  const { wishes, loading, addWish } = useWishes();
+  const { wishes, addWish } = useWishes();
   const [expandedWishId, setExpandedWishId] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(true);
   const [shootingStar, setShootingStar] = useState<ShootingStar | null>(null);
